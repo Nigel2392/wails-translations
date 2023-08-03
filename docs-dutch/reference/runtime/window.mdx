@@ -1,0 +1,250 @@
+# Venster
+
+Deze methoden geven controle over het toepassingsvenster.
+
+### WindowSetTitle
+
+Stelt de tekst in de titelbalk van het venster in.
+
+Go: `WindowSetTitle(ctx context.Context, title string)`<br/>
+JS: `WindowSetTitle(title: string)`
+
+### WindowFullscreen
+
+Maakt het venster volledig scherm.
+
+Go: `WindowFullscreen(ctx context.Context)`<br/>
+JS: `WindowFullscreen()`
+
+### WindowUnfullscreen
+
+Herstelt de vorige vensterafmetingen en -positie vóór het volledig scherm.
+
+Go: `WindowUnfullscreen(ctx context.Context)`<br/>
+JS: `WindowUnfullscreen()`
+
+### WindowIsFullscreen
+
+Geeft true terug als het venster volledig scherm is.
+
+Go: `WindowIsFullscreen(ctx context.Context) bool`<br/>
+JS: `WindowIsFullscreen() bool`
+
+### WindowCenter
+
+Centreert het venster op de monitor waarop het venster zich momenteel bevindt.
+
+Go: `WindowCenter(ctx context.Context)`<br/>
+JS: `WindowCenter()`
+
+### WindowExecJS
+
+Voert willekeurige JS-code uit in het venster.
+
+Deze methode voert de code asynchroon uit in de browser en geeft onmiddellijk terug. 
+Als het script fouten veroorzaakt, zijn deze alleen beschikbaar in de browserconsole.
+
+Go: `WindowExecJS(ctx context.Context, js string)`
+
+### WindowReload
+
+Vernieuwt de pagina (herlaadt de huidige pagina).
+
+Go: `WindowReload(ctx context.Context)`<br/>
+JS: `WindowReload()`
+
+### WindowReloadApp
+
+Vernieuwt de frontend van de applicatie.
+
+Go: `WindowReloadApp(ctx context.Context)`<br/>
+JS: `WindowReloadApp()`
+
+### WindowSetSystemDefaultTheme
+
+Alleen voor Windows.
+
+Go: `WindowSetSystemDefaultTheme(ctx context.Context)`<br/>
+JS: `WindowSetSystemDefaultTheme()`
+
+Stelt het venstertema in op het systeemstandaard (donker/licht).
+
+### WindowSetLightTheme
+
+Alleen voor Windows.
+
+Go: `WindowSetLightTheme(ctx context.Context)`<br/>
+JS: `WindowSetLightTheme()`
+
+Stelt het venstertema in op licht.
+
+### WindowSetDarkTheme
+
+Alleen voor Windows.
+
+Go: `WindowSetDarkTheme(ctx context.Context)`<br/>
+JS: `WindowSetDarkTheme()`
+
+Stelt het venstertema in op donker.
+
+### WindowShow
+
+Toont het venster als het momenteel verborgen is.
+
+Go: `WindowShow(ctx context.Context)`<br/>
+JS: `WindowShow()`
+
+### WindowHide
+
+Verbergt het venster als het momenteel zichtbaar is.
+
+Go: `WindowHide(ctx context.Context)`<br/>
+JS: `WindowHide()`
+
+### WindowIsNormal
+
+Geeft true terug als het venster niet geminimaliseerd, gemaximaliseerd of fullscreen is.
+
+Go: `WindowIsNormal(ctx context.Context) bool`<br/>
+JS: `WindowIsNormal() bool`
+
+### WindowSetSize
+
+Stelt de breedte en hoogte van het venster in.
+
+Go: `WindowSetSize(ctx context.Context, width int, height int)`<br/>
+JS: `WindowSetSize(size: Size)`
+
+### WindowGetSize
+
+Geeft de breedte en hoogte van het venster terug.
+
+Go: `WindowGetSize(ctx context.Context) (width int, height int)`<br/>
+JS: `WindowGetSize() : Size`
+
+### WindowSetMinSize
+
+Stelt de minimale grootte van het venster in.
+Het venster wordt vergroot als het momenteel kleiner is dan de opgegeven afmetingen.
+
+Het instellen van een grootte van `0,0` schakelt deze beperking uit.
+
+Go: `WindowSetMinSize(ctx context.Context, width int, height int)`<br/>
+JS: `WindowSetMinSize(size: Size)`
+
+### WindowSetMaxSize
+
+Stelt de maximale grootte van het venster in.
+Het venster wordt verkleind als het momenteel groter is dan de opgegeven afmetingen.
+
+Het instellen van een grootte van `0,0` schakelt deze beperking uit.
+
+Go: `WindowSetMaxSize(ctx context.Context, width int, height int)`<br/>
+JS: `WindowSetMaxSize(size: Size)`
+
+### WindowSetAlwaysOnTop
+
+Stelt het venster altijd bovenaan of niet bovenaan in.
+
+Go: `WindowSetAlwaysOnTop(ctx context.Context, b bool)`<br/>
+JS: `WindowSetAlwaysOnTop(b: Boolen)`
+
+### WindowSetPosition
+
+Stelt de positie van het venster in ten opzichte van de monitor waarop het venster zich momenteel bevindt.
+
+Go: `WindowSetPosition(ctx context.Context, x int, y int)`<br/>
+JS: `WindowSetPosition(position: Position)`
+
+### WindowGetPosition
+
+Geeft de positie van het venster ten opzichte van de monitor waarop het venster zich momenteel bevindt.
+
+Go: `WindowGetPosition(ctx context.Context) (x int, y int)`<br/>
+JS: `WindowGetPosition() : Position`
+
+### WindowMaximise
+
+Maximaliseert het venster om het scherm te vullen.
+
+Go: `WindowMaximise(ctx context.Context)`<br/>
+JS: `WindowMaximise()`
+
+### WindowUnmaximise
+
+Herstelt het venster naar de afmetingen en positie voordat het gemaximaliseerd werd.
+
+Go: `WindowUnmaximise(ctx context.Context)`<br/>
+JS: `WindowUnmaximise()`
+
+### WindowIsMaximised
+
+Geeft true terug als het venster gemaximaliseerd is.
+
+Go: `WindowIsMaximised(ctx context.Context) bool`<br/>
+JS: `WindowIsMaximised() bool`
+
+### WindowToggleMaximise
+
+Schakelt tussen gemaximaliseerd en niet-gemaximaliseerd.
+
+Go: `WindowToggleMaximise(ctx context.Context)`<br/>
+JS: `WindowToggleMaximise()`
+
+### WindowMinimise
+
+Minimaliseert het venster.
+
+Go: `WindowMinimise(ctx context.Context)`<br/>
+JS: `WindowMinimise()`
+
+### WindowUnminimise
+
+Herstelt het venster naar de afmetingen en positie voordat het geminimaliseerd werd.
+
+Go: `WindowUnminimise(ctx context.Context)`<br/>
+JS: `WindowUnminimise()`
+
+### WindowIsMinimised
+
+Geeft true terug als het venster geminimaliseerd is.
+
+Go: `WindowIsMinimised(ctx context.Context) bool`<br/>
+JS: `WindowIsMinimised() bool`
+
+### WindowSetBackgroundColour
+
+Stelt de achtergrondkleur van het venster in op de opgegeven RGBA-kleurdefinitie.
+Deze kleur zal zichtbaar zijn voor alle transparante pixels.
+
+Geldige waarden voor R, G, B en A zijn 0-255.
+
+:::info Windows
+
+Op Windows worden alleen alfa-waarden van 0 of 255 ondersteund.
+Elke waarde die niet 0 is, wordt beschouwd als 255.
+
+:::
+
+Go: `WindowSetBackgroundColour(ctx context.Context, R, G, B, A uint8)`<br/>
+JS: `WindowSetBackgroundColour(R, G, B, A)`
+
+## TypeScript Object Definities
+
+### Positie
+
+```ts
+interface Positie {
+  x: number;
+  y: number;
+}
+```
+
+### Grootte
+
+```ts
+interface Grootte {
+  w: number;
+  h: number;
+}
+```

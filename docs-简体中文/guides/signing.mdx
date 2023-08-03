@@ -1,0 +1,391 @@
+# 代码签名
+
+这是一个关于如何在MacOS和Windows上使用Wails生成的二进制文件进行代码签名的指南。
+该指南将针对CI环境，更具体地说是GitHub Actions。
+
+## Windows
+
+首先，您需要一个代码签名证书。如果您还没有，Microsoft的信息页面列出了一些提供商[在这里](https://docs.microsoft.com/zh-cn/windows-hardware/drivers/dashboard/get-a-code-signing-certificate)。
+请注意，除非您需要编写内核级软件，如设备驱动程序，否则不需要EV证书。对于签署您的Wails应用程序，一个标准的代码签名证书就足够了。
+
+在针对自动化构建系统之前，最好与您的证书提供商确认如何在本地机器上签名您的二进制文件，这样您就知道是否存在任何特殊要求。例如，[这里](https://www.ssl.com/how-to/using-your-code-signing-certificate/)是SSL.com的Windows代码签名指南。
+如果您知道如何在本地签名，那么在CI环境中排查潜在问题将更容易。
+例如，SSL.com代码签名证书需要[SignTool.exe](https://docs.microsoft.com/zh-cn/windows/win32/seccrypto/signtool)的`/tr`标志，而其他提供商可能仅需要提供时间戳服务器的`/t`标志。像[这个](https://github.com/Dana-Prajea/code-sign-action)这样的流行的用于签署Windows二进制文件的GitHub Actions不支持`/tr`标志。因此，本指南将重点介绍使用PowerShell命令手动签署应用程序，但如果您愿意，也可以使用[code-sign-action](https://github.com/Dana-Prajea/code-sign-action)等操作。
+
+首先，让我们确保我们能够在GitHub CI中构建我们的Wails应用程序。这里是一个小的工作流模板：
+
+```yaml
+name: "example"
+on:
+  workflow_dispatch:
+    # 当您转到Actions并手动运行工作流程时，此操作才会开始。
+
+jobs:
+  package:
+    strategy:
+      matrix:
+        platform: [windows-latest, macos-latest]
+        go-version: [1.18]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      # 除非您在wails.json中配置了前端构建和安装命令，否则您可能需要在此处手动构建前端。
+      - name: Get Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      - name: Build Wails app
+        run: |
+          wails build
+      - name: upload artifacts macOS
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-macos
+          path: build/bin/*
+      - name: upload artifacts windows
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-windows
+          path: build/bin/*
+```
+
+
+接下来，我们需要给GitHub工作流程访问我们的签名证书的权限。这可以通过将.pfx或.p12证书编码为base64字符串来完成。在PowerShell中，您可以使用以下命令来完成这个操作，假设您的证书名为'my-cert.p12'：
+
+```PowerShell
+certutil -encode .\my-cert.p12 my-cert-base64.txt
+```
+
+现在，您应该有了一个包含base64编码证书的.txt文件。它应该以“-----BEGIN CERTIFICATE-----”开头，并以“-----END CERTIFICATE-----”结尾。现在，您需要在GitHub上创建两个操作密钥。导航到“设置 -> 密钥 -> 操作”并创建以下两个密钥：
+
+- **WIN_SIGNING_CERT**，其内容为base64编码的证书文本。
+- **WIN_SIGNING_CERT_PASSWORD**，其内容为证书密码。
+
+现在，我们准备使用以下两种方法之一在工作流程中实现签名：
+
+### 方法1：使用命令进行签名
+
+该方法使用PowerShell命令对我们的应用程序进行签名，并使您对整个签名过程具有控制权。
+
+在“Build Wails app”步骤之后，我们可以在工作流程中添加以下步骤：
+
+```yaml
+- name: Sign Windows binaries
+    if: matrix.platform == 'windows-latest'
+    run: |
+        echo "Creating certificate file"
+        New-Item -ItemType directory -Path certificate
+        Set-Content -Path certificate\certificate.txt -Value '${{ secrets.WIN_SIGNING_CERT }}'
+        certutil -decode certificate\certificate.txt certificate\certificate.pfx
+        echo "Signing our binaries"
+        & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd <signing algorithm> /t <timestamping server> /f certificate\certificate.pfx /p '${{ secrets.WIN_SIGNING_CERT_PASSWORD }}' <path to binary>
+```
+
+该脚本将为您的证书文件创建一个新目录，根据我们的base64密钥创建证书文件，将其转换为.pfx文件，并最后对二进制文件进行签名。您需要在最后一行中替换以下变量：
+
+- **signing algorithm**：通常为sha256。
+- **timestamping server**：您要与证书一起使用的时间戳服务器的URL。
+- **path to binary**：要签名的二进制文件的路径。
+
+假设我们的Wails配置中`outputfilename`设置为“app.exe”，并且我们从SSL.com获得了一个证书，那么我们的工作流程将如下所示：
+
+```yaml
+name: "example"
+on:
+  workflow_dispatch:
+    # 当您转到Actions并手动运行工作流程时，此操作仅开始。
+
+jobs:
+  package:
+    strategy:
+      matrix:
+        platform: [windows-latest, macos-latest]
+        go-version: [1.18]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      # 您可能需要在此处手动构建前端，除非您已在wails.json中配置了前端构建和安装命令。
+      - name: Get Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      - name: Build Wails app
+        run: |
+          wails build
+      - name: Sign Windows binaries
+        if: matrix.platform == 'windows-latest'
+        run: |
+          echo "Creating certificate file"
+          New-Item -ItemType directory -Path certificate
+          Set-Content -Path certificate\certificate.txt -Value '${{ secrets.WIN_SIGNING_CERT }}'
+          certutil -decode certificate\certificate.txt certificate\certificate.pfx
+          echo "Signing our binaries"
+          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ secrets.WIN_SIGNING_CERT_PASSWORD }}' .\build\bin\app.exe
+
+      - name: upload artifacts macOS
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-macos
+          path: build/bin/*
+      - name: upload artifacts windows
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-windows
+          path: build/bin/*
+```
+
+### 方法2：使用Action自动签名
+
+可以使用类似于[此处](https://github.com/marketplace/actions/code-sign-a-file-with-pfx-certificate)的Windows代码签名Action来自动签名，但请注意，它需要证书的SHA1哈希值和证书名称。在该Action的[市场](https://github.com/marketplace/actions/code-sign-a-file-with-pfx-certificate)中查看如何配置的示例。
+
+---
+
+## MacOS
+
+首先，您需要从Apple获取您的代码签名证书。如果您没有证书，可以通过简单的Google搜索来获取。获得证书后，您需要导出并将其编码为base64。[这个教程](https://localazy.com/blog/how-to-automatically-sign-macos-apps-using-github-actions)以简单的方式展示了如何做到这一点。在导出您的.p12证书文件后，您可以使用以下命令将其编码为base64：
+
+```bash
+base64 Certificates.p12 | pbcopy
+```
+
+现在，您可以像Windows一样创建一些GitHub项目密钥：
+
+- **APPLE_DEVELOPER_CERTIFICATE_P12_BASE64**，其内容为您刚刚复制的base64证书。
+- **APPLE_DEVELOPER_CERTIFICATE_PASSWORD**，其内容为您的证书密码。
+- **APPLE_PASSWORD**，其内容为您的Apple-ID帐户的App-Specific密码，您可以在[此处](https://appleid.apple.com/account/manage)生成。
+
+让我们确保我们能够在GitHub Action工作流程中构建我们的Wails应用程序。这是一个小模板：
+
+```yaml
+name: "example"
+on:
+  workflow_dispatch:
+    # 当您转到Actions并手动运行工作流程时，此操作仅开始。
+
+jobs:
+  package:
+    strategy:
+      matrix:
+        platform: [windows-latest, macos-latest]
+        go-version: [1.18]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      # 您可能需要在此处手动构建前端，除非您已在wails.json中配置了前端构建和安装命令。
+      - name: Get Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      - name: Build Wails app
+        run: |
+          wails build
+      - name: upload artifacts macOS
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-macos
+          path: build/bin/*
+      - name: upload artifacts windows
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-windows
+          path: build/bin/*
+```
+
+对于macOS上的代码签名，[gon](https://github.com/mitchellh/gon)是一个非常方便的用于代码签名和与Apple服务器通信的工具，也是用Go编写的，并且将在本指南中使用。
+
+在“Build Wails app”步骤之后，将以下内容添加到工作流程中：
+
+```yaml
+- name: MacOS download gon for code signing and app notarization
+  if: matrix.platform == 'macos-latest'
+  run: |
+    brew install mitchellh/gon/gon
+```
+
+现在，我们需要在`build/darwin`目录中配置一些gon配置文件：
+
+1. gon-sign.json：
+
+```json
+{
+  "source": ["./build/bin/app.app"],
+  "bundle_id": "app.myapp",
+  "apple_id": {
+    "username": "my-appleid@email.com",
+    "password": "@env:APPLE_PASSWORD"
+  },
+  "sign": {
+    "application_identity": "Developer ID Application: My Name"
+  }
+}
+```
+
+其中，`source`是您的Wails二进制文件，`bundle_id`是您的Bundle ID，`apple_id`包含您的Apple ID用户名和之前创建的App-Specific密码，`sign.application_identity`是您的标识，您可以通过运行以下命令找到：
+
+```bash
+security find-identity -v -p codesigning
+```
+
+2. entitlements.plist：
+
+```plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.app-sandbox</key>
+  <true/>
+  <key>com.apple.security.network.client</key>
+  <true/>
+  <key>com.apple.security.network.server</key>
+  <true/>
+  <key>com.apple.security.files.user-selected.read-write</key>
+  <true/>
+  <key>com.apple.security.files.downloads.read-write</key>
+  <true/>
+</dict>
+</plist>
+```
+
+在此文件中，您可以为应用程序配置所需的授权，例如，如果您的应用程序使用相机，则可以配置相机权限。了解有关授权的更多信息，请阅读[此处](https://developer.apple.com/documentation/bundleresources/entitlements)。
+
+确保您已使用与您在`gon-sign.json`中输入的相同的Bundle ID更新了您的`Info.plist`文件。下面是一个示例`Info.plist`文件：
+
+```plist
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+	<key>CFBundlePackageType</key><string>APPL</string>
+	<key>CFBundleName</key><string>MyApp</string>
+	<key>CFBundleExecutable</key><string>app</string>
+	<key>CFBundleIdentifier</key><string>app.myapp</string>
+	<key>CFBundleVersion</key><string>0.1.0</string>
+	<key>CFBundleGetInfoString</key><string>My app is cool and nice and chill and</string>
+	<key>CFBundleShortVersionString</key><string>0.1.0</string>
+	<key>CFBundleIconFile</key><string>iconfile</string>
+	<key>LSMinimumSystemVersion</key><string>10.13.0</string>
+	<key>NSHighResolutionCapable</key><string>true</string>
+	<key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
+	<key>NSHumanReadableCopyright</key><string>© Me</string>
+</dict></plist>
+```
+
+现在，在构建Wails应用程序之后，我们准备在工作流程中添加签名步骤：
+
+```yaml
+- name: 导入 macOS 代码签名证书
+  if: matrix.platform == 'macos-latest'
+  uses: Apple-Actions/import-codesign-certs@v1
+  with:
+    # 以base64字符串编码的PKCS12文件中的证书
+    p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_BASE64 }}
+    # 用于导入PKCS12文件的密码
+    p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+- name: 对我们的 macOS 可执行文件进行签名
+  if: matrix.platform == 'macos-latest'
+  run: |
+    echo "签名包"
+    gon -log-level=info ./build/darwin/gon-sign.json
+```
+
+请注意，使用 Apple 进行二进制文件签名可能需要几分钟到几小时不等。
+
+## 合并的工作流文件：
+
+以下是我们的 GitHub 工作流文件，包含了 Windows 和 macOS：
+
+```yaml
+name: "示例合并"
+on:
+  workflow_dispatch:
+  # 仅当您转到 Actions 并手动运行工作流时，此操作才会启动。
+
+jobs:
+  package:
+    strategy:
+      matrix:
+        platform: [windows-latest, macos-latest]
+        go-version: [1.18]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: 安装 Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: 设置 node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      # 在此处可能需要手动构建前端，除非您已在 wails.json 中配置了前端构建和安装命令。
+      - name: 获取 Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      - name: 构建 Wails 应用
+        run: |
+          wails build
+      - name: 下载用于代码签名和应用程序验签的 gon
+        if: matrix.platform == 'macos-latest'
+        run: |
+          brew install mitchellh/gon/gon
+      - name: 导入 macOS 代码签名证书
+        if: matrix.platform == 'macos-latest'
+        uses: Apple-Actions/import-codesign-certs@v1
+        with:
+          # 以base64字符串编码的PKCS12文件中的证书
+          p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_BASE64 }}
+          # 用于导入PKCS12文件的密码
+          p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+      - name: 对我们的 macOS 可执行文件进行签名
+        if: matrix.platform == 'macos-latest'
+        run: |
+          echo "签名包"
+          gon -log-level=info ./build/darwin/gon-sign.json
+      - name: 对 Windows 可执行文件进行签名
+        if: matrix.platform == 'windows-latest'
+        run: |
+          echo "创建证书文件"
+          New-Item -ItemType directory -Path certificate
+          Set-Content -Path certificate\certificate.txt -Value '${{ secrets.WIN_SIGNING_CERT }}'
+          certutil -decode certificate\certificate.txt certificate\certificate.pfx
+          echo "对我们的二进制文件进行签名"
+          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ secrets.WIN_SIGNING_CERT_PASSWORD }}' .\build\bin\Monitor.exe
+      - name: 上传 macOS 产物
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-macos
+          path: build/bin/*
+      - name: 上传 Windows 产物
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-windows
+          path: build/bin/*
+```
+
+# 结束语
+
+本指南受 RiftShare 项目及其工作流的启发，强烈建议在[此处](https://github.com/achhabra2/riftshare/blob/main/.github/workflows/build.yaml)查看。

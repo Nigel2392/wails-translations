@@ -1,0 +1,248 @@
+---
+sidebar_position: 20
+---
+
+# 狗狗 API
+
+```mdx-code-block
+<div class="text--center">
+  <img
+    src={require("@site/static/img/tutorials/dogsapi/img.webp").default}
+    width="50%"
+    className="screenshot"
+  />
+</div>
+<br />
+```
+
+:::note
+
+本教程由[@tatadan](https://twitter.com/tatadan)提供，是他们的[Wails示例存储库](https://github.com/tataDan/wails-v2-examples)的一部分。
+
+:::
+
+在本教程中，我们将开发一个从网络上获取狗狗照片并显示的应用程序。
+
+### 创建项目
+
+让我们创建应用程序。在终端中输入：
+`wails init -n dogs-api -t svelte`
+
+注意：如果您想添加IDE支持，可以在此命令的末尾加上`-ide vscode`或`-ide goland`。
+
+现在让我们`cd dogs-api`并开始编辑项目文件。
+
+### 删除未使用的代码
+
+我们将从删除一些我们知道不会使用的元素开始：
+
+- 打开 `app.go` 并删除以下行：
+
+```go
+// Greet returns a greeting for the given name
+func (a *App) Greet(name string) string {
+	return fmt.Sprintf("Hello %s, It's show time!", name)
+}
+```
+
+- 打开 `frontend/src/App.svelte` 并删除所有行。
+- 删除 `frontend/src/assets/images/logo-universal.png` 文件。
+
+### 创建我们的应用程序
+
+现在让我们添加我们的新的 Go 代码。
+
+在函数定义之前，向 `app.go` 添加以下结构声明：
+
+```go
+type RandomImage struct {
+	Message string
+	Status  string
+}
+
+type AllBreeds struct {
+	Message map[string]map[string][]string
+	Status  string
+}
+
+type ImagesByBreed struct {
+	Message []string
+	Status  string
+}
+```
+
+在 `app.go` 中添加以下函数（可能在现有函数定义之后）：
+
+```go
+func (a *App) GetRandomImageUrl() string {
+	response, err := http.Get("https://dog.ceo/api/breeds/image/random")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var data RandomImage
+	json.Unmarshal(responseData, &data)
+
+	return data.Message
+}
+
+func (a *App) GetBreedList() []string {
+	var breeds []string
+
+	response, err := http.Get("https://dog.ceo/api/breeds/list/all")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var data AllBreeds
+	json.Unmarshal(responseData, &data)
+
+	for k := range data.Message {
+		breeds = append(breeds, k)
+	}
+
+	sort.Strings(breeds)
+
+	return breeds
+}
+
+func (a *App) GetImageUrlsByBreed(breed string) []string {
+
+	url := fmt.Sprintf("%s%s%s%s", "https://dog.ceo/api/", "breed/", breed, "/images")
+	response, err := http.Get(url)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var data ImagesByBreed
+	json.Unmarshal(responseData, &data)
+
+	return data.Message
+}
+```
+
+将 `app.go` 中的 `import` 部分修改为以下内容：
+
+```go
+import (
+	"context"
+	"fmt"
+	"encoding/json"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"sort"
+)
+```
+
+将以下文本翻译为简体中文：
+
+将以下行添加到 `frontend/src/App.svelte`：
+
+<!-- prettier-ignore-start -->
+```html
+<script>
+  import { GetRandomImageUrl } from "../wailsjs/go/main/App.js";
+  import { GetBreedList } from "../wailsjs/go/main/App.js";
+  import { GetImageUrlsByBreed } from "../wailsjs/go/main/App.js";
+
+  let randomImageUrl = "";
+  let breeds = [];
+  let photos = [];
+  let selectedBreed;
+  let showRandomPhoto = false;
+  let showBreedPhotos = false;
+
+  function init() {
+    getBreedList();
+  }
+
+  init();
+
+  function getRandomImageUrl() {
+    showRandomPhoto = false;
+    showBreedPhotos = false;
+    GetRandomImageUrl().then((result) => (randomImageUrl = result));
+    showRandomPhoto = true;
+  }
+
+  function getBreedList() {
+    GetBreedList().then((result) => (breeds = result));
+  }
+
+  function getImageUrlsByBreed() {
+    init();
+    showRandomPhoto = false;
+    showBreedPhotos = false;
+    GetImageUrlsByBreed(selectedBreed).then((result) => (photos = result));
+    showBreedPhotos = true;
+  }
+</script>
+
+<h3>Dogs API</h3>
+<div>
+  <button class="btn" on:click={getRandomImageUrl}>
+    随机获取一只狗
+  </button>
+  点击下箭头选择品种
+  <select bind:value={selectedBreed}>
+    {#each breeds as breed}
+      <option value={breed}>
+        {breed}
+      </option>
+    {/each}
+  </select>
+  <button class="btn" on:click={getImageUrlsByBreed}>
+    根据品种获取狗狗
+  </button>
+</div>
+<br />
+{#if showRandomPhoto}
+  <img id="random-photo" src={randomImageUrl} alt="未找到狗狗" />
+{/if}
+{#if showBreedPhotos}
+  {#each photos as photo}
+    <img id="breed-photos" src={photo} alt="未找到狗狗" />
+  {/each}
+{/if}
+
+<style>
+  #random-photo {
+    width: 600px;
+    height: auto;
+  }
+
+  #breed-photos {
+    width: 300px;
+    height: auto;
+  }
+
+  .btn:focus {
+    border-width: 3px;
+  }
+</style>
+```
+<!-- prettier-ignore-end -->
+
+### 测试应用程序
+
+要生成绑定并测试应用程序，请运行 `wails dev`。
+
+### 编译应用程序
+
+要将应用程序编译为单个、生产级二进制文件，请运行 `wails build`。

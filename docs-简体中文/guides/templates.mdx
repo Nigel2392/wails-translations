@@ -1,0 +1,97 @@
+# 模板
+
+Wails从预先创建的模板生成项目。在v1中，这是一组难以维护的项目，容易过时。在v2中，为了赋予社区更多的权力，已经添加了一些用于模板的新功能：
+
+- 从[远程模板](../reference/cli.mdx#remote-templates)生成项目的能力
+- 帮助创建自己的模板的工具
+
+## 创建模板
+
+要创建一个模板，你可以使用`wails generate template`命令。要生成一个默认模板，运行：
+
+`wails generate template -name mytemplate`
+
+这将创建目录"mytemplate"，其中包含默认文件：
+
+```shell title=mytemplate/
+.
+|-- NEXTSTEPS.md
+|-- README.md
+|-- app.tmpl.go
+|-- frontend
+|   `-- dist
+|       |-- assets
+|       |   |-- fonts
+|       |   |   |-- OFL.txt
+|       |   |   `-- nunito-v16-latin-regular.woff2
+|       |   `-- images
+|       |       `-- logo-dark.svg
+|       |-- index.html
+|       |-- main.css
+|       `-- main.js
+|-- go.mod.tmpl
+|-- main.tmpl.go
+|-- template.json
+`-- wails.tmpl.json
+```
+
+### 模板概述
+
+默认模板包括以下文件和目录：
+
+| 文件名/目录 | 描述                                 |
+| --------------- | -------------------------------------------- |
+| NEXTSTEPS.md    | 完成模板的说明书       |
+| README.md       | 模板发布的自述文件       |
+| app.tmpl.go     | `app.go` 模板文件                       |
+| frontend/       | 包含前端资产的目录     |
+| go.mod.tmpl     | `go.mod` 模板文件                       |
+| main.tmpl.go    | `main.go` 模板文件                      |
+| template.json   | 模板元数据                        |
+| wails.tmpl.json | `wails.json` 模板文件                   |
+
+此时建议按照 `NEXTSTEPS.md` 中的步骤进行操作。
+
+## 从现有项目创建模板
+
+可以通过在生成模板时传递项目路径来从现有的前端项目创建模板。现在我们将演示如何创建一个 Vue 3 模板：
+
+- 安装 Vue CLI：`npm install -g @vue/cli`
+- 创建默认项目：`vue create vue3-base`
+  - 选择 `Default (Vue 3) ([Vue 3] babel, eslint)`
+- 生成项目后，运行以下命令：
+
+```shell
+> wails generate template -name wails-vue3-template -frontend .\vue3-base\
+提取基本模板文件...
+将现有项目文件迁移到前端目录...
+更新 package.json 数据...
+将 package.json 重命名为 package.tmpl.json...
+更新 package-lock.json 数据...
+将 package-lock.json 重命名为 package-lock.tmpl.json...
+```
+
+- 现在可以按照 `NEXTSTEPS.md` 文件中的指示自定义模板
+- 文件准备好后，可以通过运行以下命令进行测试：`wails init -n my-vue3-project -t .\wails-vue3-template\`
+- 要测试新项目，请运行：`cd my-vue3-project` 然后 `wails build`
+- 编译完成后，运行项目：`.\build\bin\my-vue3-project.exe`
+- 您应该拥有一个完全运行的 Vue3 应用程序：
+
+```mdx-code-block
+<div className="text--center">
+  <img
+    src={require("@site/static/img/vue3-template.png").default}
+    width="50%"
+  />
+</div>
+```
+
+## 发布模板
+
+发布模板只需将文件推送到 GitHub。鼓励以下最佳实践：
+
+- 从前端目录中删除任何不需要的文件和目录（例如`.git`）
+- 确保 `template.json` 是完整的，特别是 `helpurl`
+- 将文件推送到 GitHub
+- 在[社区模板](../community/templates.mdx)页面上创建 PR
+- 在[模板发布](https://github.com/wailsapp/wails/discussions/825)讨论版上宣布模板

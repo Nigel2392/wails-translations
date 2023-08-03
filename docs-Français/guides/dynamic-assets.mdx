@@ -1,0 +1,136 @@
+# Ressources dynamiques
+
+Si vous souhaitez charger ou générer des ressources pour votre frontend de manière dynamique, vous pouvez le faire en utilisant l'option [AssetsHandler](../reference/options#assetshandler). L'AssetsHandler est un `http.Handler` générique qui sera appelé pour toute requête autre que GET sur le serveur de ressources, ainsi que pour les requêtes GET qui ne peuvent pas être servies à partir des ressources regroupées car le fichier n'a pas été trouvé.
+
+En installant un AssetsHandler personnalisé, vous pouvez servir vos propres ressources à l'aide d'un serveur de ressources personnalisé.
+
+## Exemple
+
+Dans notre projet exemple, nous allons créer un gestionnaire de ressources simple qui chargera les fichiers à partir du disque :
+
+```go title=main.go {17-36,49}
+package main
+
+import (
+	"embed"
+	"fmt"
+	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/options"
+	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"net/http"
+	"os"
+	"strings"
+)
+
+//go:embed all:frontend/dist
+var assets embed.FS
+
+type FileLoader struct {
+	http.Handler
+}
+
+func NewFileLoader() *FileLoader {
+	return &FileLoader{}
+}
+
+func (h *FileLoader) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	var err error
+	requestedFilename := strings.TrimPrefix(req.URL.Path, "/")
+	println("Fichier demandé:", requestedFilename)
+	fileData, err := os.ReadFile(requestedFilename)
+	if err != nil {
+		res.WriteHeader(http.StatusBadRequest)
+		res.Write([]byte(fmt.Sprintf("Impossible de charger le fichier %s", requestedFilename)))
+	}
+
+	res.Write(fileData)
+}
+
+func main() {
+	// Crée une instance de la structure de l'application
+	app := NewApp()
+
+	// Crée l'application avec les options
+	err := wails.Run(&options.App{
+		Title:  "helloworld",
+		Width:  1024,
+		Height: 768,
+		AssetServer: &assetserver.Options{
+			Assets:  assets,
+			Handler: NewFileLoader(),
+		},
+		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 255},
+		OnStartup:        app.startup,
+		Bind: []interface{}{
+			app,
+		},
+	})
+
+	if err != nil {
+		println("Erreur :", err)
+	}
+}
+```
+
+Lorsque nous exécutons l'application en mode développement en utilisant `wails dev`, nous verrons la sortie suivante:
+
+```
+DEB | [ExternalAssetHandler] Chargement de 'http://localhost:3001/favicon.ico'
+DEB | [ExternalAssetHandler] Le chargement de 'http://localhost:3001/favicon.ico' a échoué, utilisation de AssetHandler
+Demande de fichier: favicon.ico
+```
+
+Comme vous pouvez le voir, le gestionnaire d'actifs est appelé lorsque le serveur d'actifs par défaut ne parvient pas à servir le fichier `favicon.ico`.
+
+Si vous faites un clic droit sur l'application principale et sélectionnez "inspecter" pour ouvrir les outils de développement, vous pouvez tester cette fonctionnalité en tapant ce qui suit dans la console:
+
+```
+let response = await fetch('does-not-exist.txt');
+```
+
+Cela générera une erreur dans les outils de développement. Nous pouvons voir que l'erreur est celle que nous attendons, renvoyée par notre gestionnaire d'actifs personnalisé:
+
+```mdx-code-block
+<p className="text--center">
+  <img
+    src={require("@site/static/img/assetshandler-does-not-exist.webp").default}
+  />
+</p>
+```
+
+Cependant, si nous demandons `go.mod`, nous verrons la sortie suivante:
+
+```mdx-code-block
+<p className="text--center">
+  <img src={require("@site/static/img/assetshandler-go-mod.webp").default} />
+</p>
+```
+
+Cette technique peut être utilisée pour charger des images directement dans la page. Si nous mettons à jour notre modèle vanille par défaut et remplaçons l'image du logo:
+
+```html
+<img id="logo" class="logo" />
+```
+
+par:
+
+```html
+<img src="build/appicon.png" style="width: 300px" />
+```
+
+Alors nous verrions ceci:
+
+```mdx-code-block
+<p className="text--center">
+  <img
+    src={require("@site/static/img/assetshandler-image.webp").default}
+    style={{ width: "75%" }}
+  />
+</p>
+```
+
+:::warning
+
+Exposer votre système de fichiers de cette manière représente un risque pour la sécurité. Il est recommandé de gérer correctement l'accès à votre système de fichiers.
+
+:::

@@ -1,0 +1,109 @@
+# Linux Distro Ondersteuning
+
+## Overzicht
+
+Wails biedt ondersteuning voor Linux, maar het verstrekken van installatie-instructies voor alle beschikbare distributies is een onmogelijke taak.
+In plaats daarvan probeert Wails te bepalen of de pakketten die je nodig hebt om applicaties te ontwikkelen beschikbaar zijn via het pakketbeheer van je systeem.
+Op dit moment ondersteunen we de volgende pakketbeheerders:
+
+- apt
+- dnf
+- emerge
+- eopkg
+- nixpkgs
+- pacman
+- zypper
+
+## Pakketnamen toevoegen
+
+Er kunnen gevallen zijn waarin je distributie een van de ondersteunde pakketbeheerders gebruikt, maar de pakketnaam is anders.
+Bijvoorbeeld, je kunt een Ubuntu-afgeleide gebruiken, maar de pakketnaam voor gtk kan anders zijn. Wails probeert het juiste pakket te vinden door een lijst met pakketnamen te doorlopen.
+De lijst met pakketten wordt opgeslagen in het bestand dat specifiek is voor het pakketbeheer in de `v2/internal/system/packagemanager` map.
+In ons voorbeeld zou dit `v2/internal/system/packagemanager/apt.go` zijn.
+
+In dit bestand worden de lijsten met pakketten gedefinieerd door de `Packages()` methode:
+
+```go
+func (a *Apt) Packages() packagemap {
+	return packagemap{
+		"libgtk-3": []*Package{
+			{Name: "libgtk-3-dev", SystemPackage: true, Library: true},
+		},
+		"libwebkit": []*Package{
+			{Name: "libwebkit2gtk-4.0-dev", SystemPackage: true, Library: true},
+		},
+		"gcc": []*Package{
+			{Name: "build-essential", SystemPackage: true},
+		},
+		"pkg-config": []*Package{
+			{Name: "pkg-config", SystemPackage: true},
+		},
+		"npm": []*Package{
+			{Name: "npm", SystemPackage: true},
+		},
+		"docker": []*Package{
+			{Name: "docker.io", SystemPackage: true, Optional: true},
+		},
+	}
+}
+```
+
+Laten we aannemen dat in onze Linux-distributie `libgtk-3` is verpakt onder de naam `lib-gtk3-dev`.
+We kunnen ondersteuning hiervoor toevoegen door de volgende regel toe te voegen:
+
+```go {5}
+func (a *Apt) Packages() packagemap {
+	return packagemap{
+		"libgtk-3": []*Package{
+			{Name: "libgtk-3-dev", SystemPackage: true, Library: true},
+			{Name: "lib-gtk3-dev", SystemPackage: true, Library: true},
+		},
+		"libwebkit": []*Package{
+			{Name: "libwebkit2gtk-4.0-dev", SystemPackage: true, Library: true},
+		},
+		"gcc": []*Package{
+			{Name: "build-essential", SystemPackage: true},
+		},
+		"pkg-config": []*Package{
+			{Name: "pkg-config", SystemPackage: true},
+		},
+		"npm": []*Package{
+			{Name: "npm", SystemPackage: true},
+		},
+		"docker": []*Package{
+			{Name: "docker.io", SystemPackage: true, Optional: true},
+		},
+	}
+}
+```
+
+## Nieuwe pakketbeheerders toevoegen
+
+Om een nieuwe pakketbeheerder toe te voegen, voer je de volgende stappen uit:
+
+- Maak een nieuw bestand in `v2/internal/system/packagemanager` genaamd `<pm>.go`, waarbij `<pm>` de naam van de pakketbeheerder is.
+- Definieer een structuur die voldoet aan de interface van de pakketbeheerder die is gedefinieerd in `pm.go`:
+
+```go
+type PackageManager interface {
+	Name() string
+	Packages() packagemap
+	PackageInstalled(*Package) (bool, error)
+	PackageAvailable(*Package) (bool, error)
+	InstallCommand(*Package) string
+}
+```
+
+- `Name()` moet de naam van de pakketbeheerder retourneren
+- `Packages()` moet een `packagemap` retourneren, die kandidaat-bestandsnamen voor afhankelijkheden biedt
+- `PackageInstalled()` moet `true` retourneren als het gegeven pakket geïnstalleerd is
+- `PackageAvailable()` moet `true` retourneren als het gegeven pakket niet is geïnstalleerd maar beschikbaar is voor installatie
+- `InstallCommand()` moet het exacte commando retourneren om de gegeven pakketnaam te installeren
+
+Bekijk de code van de andere pakketbeheerders om een idee te krijgen hoe dit werkt.
+
+:::info Onthoud
+
+Als je ondersteuning toevoegt voor een nieuwe pakketbeheerder, vergeet dan niet om ook deze pagina bij te werken!
+
+:::

@@ -1,0 +1,41 @@
+# Evenementen
+
+De Wails-runtime biedt een uniform evenementensysteem, waarbij evenementen kunnen worden uitgezonden of ontvangen door zowel Go als JavaScript.
+Optioneel kan er data worden doorgegeven met de evenementen. Luisteraars ontvangen de data in de lokale datatypes.
+
+### EventsOn
+
+Deze methode stelt een luisteraar in voor de opgegeven evenementnaam. Wanneer een evenement van het type `eventName` wordt [uitgezonden](#EventsEmit),
+wordt de callback geactiveerd. Eventuele extra data die wordt verzonden met het uitgezonden evenement, wordt doorgegeven aan de callback. Het retourneert
+een functie om de luisteraar te annuleren.
+
+Go: `EventsOn(ctx context.Context, eventName string, callback func(optionalData ...interface{})) func()`<br/>
+JS: `EventsOn(eventName string, callback function(optionalData?: any)): () => void`
+
+### EventsOff
+
+Deze methode schrijft de luisteraar uit voor de opgegeven evenementnaam, optioneel kunnen meerdere luisteraars uitgeschreven worden via `additionalEventNames`.
+
+Go: `EventsOff(ctx context.Context, eventName string, additionalEventNames ...string)`<br/>
+JS: `EventsOff(eventName string, ...additionalEventNames)`
+
+### EventsOnce
+
+Deze methode stelt een luisteraar in voor de opgegeven gebeurtenisnaam, maar zal slechts één keer geactiveerd worden. Het retourneert een functie om de luisteraar te annuleren.
+
+Go: `EventsOnce(ctx context.Context, eventName string, callback func(optionalData ...interface{})) func()`<br/>
+JS: `EventsOnce(eventName string, callback function(optionalData?: any)): () => void`
+
+### EventsOnMultiple
+
+Deze methode stelt een luisteraar in voor de opgegeven gebeurtenisnaam, maar zal maximaal `counter` keren geactiveerd worden. Het retourneert een functie om de luisteraar te annuleren.
+
+Go: `EventsOnMultiple(ctx context.Context, eventName string, callback func(optionalData ...interface{}), counter int) func()`<br/>
+JS: `EventsOnMultiple(eventName string, callback function(optionalData?: any), counter int): () => void`
+
+### EventsEmit
+
+Deze methode zendt de opgegeven gebeurtenis uit. Optionele gegevens kunnen worden doorgegeven met de gebeurtenis. Dit zal alle gebeurtenisluisteraars activeren.
+
+Go: `EventsEmit(ctx context.Context, eventName string, optionalData ...interface{})`<br/>
+JS: `EventsEmit(eventName: string, ...optionalData: any)`

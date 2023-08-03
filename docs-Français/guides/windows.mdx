@@ -1,0 +1,64 @@
+# Windows
+
+Cette page contient divers guides liés au développement d'applications Wails pour Windows.
+
+## Gestion de la dépendance de l'exécution WebView2
+
+Les applications Wails construites pour Windows ont une dépendance d'exécution sur le [WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) de Microsoft.
+Windows 11 l'aura installé par défaut, mais certaines machines ne l'auront pas. Wails propose une approche facile pour gérer cette dépendance.
+
+En utilisant le drapeau `-webview2` lors de la construction, vous pouvez décider du comportement de votre application lorsque l'exécution appropriée n'est pas détectée (y compris si l'exécution installée est trop ancienne).
+Les quatre options sont :
+
+1. Téléchargement
+2. Intégration
+3. Navigateur
+4. Erreur
+
+### Téléchargement
+
+Cette option informera l'utilisateur qu'aucune exécution appropriée n'a été trouvée, puis proposera de télécharger et d'exécuter le programme d'amorçage officiel depuis le site WebView2 de Microsoft. Si l'utilisateur accepte, le programme d'amorçage officiel sera téléchargé et exécuté.
+
+### Intégration
+
+Cette option intègre le programme d'amorçage officiel dans l'application. Si aucune exécution appropriée n'a été trouvée, l'application proposera d'exécuter le programme d'amorçage. Cela ajoute environ 150ko à la taille binaire.
+
+### Navigateur
+
+Cette option informera l'utilisateur qu'aucun environnement d'exécution approprié n'a été trouvé, puis proposera d'ouvrir un navigateur vers la page officielle WebView2 où le programme d'installation peut être téléchargé et installé. L'application se quittera ensuite, laissant l'installation à la charge de l'utilisateur.
+
+### Erreur
+
+Si aucun environnement d'exécution approprié n'est trouvé, une erreur est affichée à l'utilisateur et aucune autre action n'est entreprise.
+
+## Version corrigée de l'environnement d'exécution
+
+Une autre façon de gérer la dépendance de WebView2 est de l'inclure dans votre application.
+Vous pouvez télécharger la [version corrigée de l'environnement d'exécution](https://developer.microsoft.com/microsoft-edge/webview2/#download-section) et l'intégrer ou la télécharger avec votre application.
+
+De plus, vous devez spécifier le chemin vers la version corrigée de l'environnement d'exécution WebView2 dans la structure `windows.Options` lors du lancement de Wails.
+
+```go
+	wails.Run(&options.App{
+		Windows: &windows.Options{
+			WebviewBrowserPath:  "",
+		},
+	})
+```
+
+Remarque : Lorsque `WebviewBrowserPath` est spécifié, la stratégie `error` sera forcée en cas de version minimale requise incorrecte ou de chemin incorrect vers une exécution.
+
+## Lancement d'autres programmes
+
+Lorsque vous lancez d'autres programmes, tels que des scripts, vous verrez la fenêtre apparaître à l'écran. Pour masquer la fenêtre, vous pouvez utiliser le code suivant :
+
+```go
+cmd := exec.Command("votre_script.exe")
+cmd.SysProcAttr = &syscall.SysProcAttr{
+	HideWindow:    true,
+	CreationFlags: 0x08000000,
+}
+cmd.Start()
+```
+
+Solution fournie par [sithembiso](https://github.com/sithembiso) sur le [forum de discussion](https://github.com/wailsapp/wails/discussions/1734#discussioncomment-3386172).

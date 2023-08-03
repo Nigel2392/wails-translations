@@ -1,0 +1,100 @@
+# Mac App Store Handleiding
+
+Deze pagina geeft een beknopt overzicht van hoe je jouw Wails App kunt indienen bij de Mac App Store.
+
+## Vereisten
+
+- Je moet een Apple Developer-account hebben. Meer informatie is te vinden op de [Apple Developer-programma](https://developer.apple.com/support/compare-memberships/)-site.
+- Je moet je Certificaten, Identifiers en App hebben aangemaakt op het ontwikkelaarsportaal. Meer hierover hieronder.
+- Xcode-command line tools moeten geïnstalleerd zijn op je lokale machine.
+
+#### Certificaten en Identifiers aanmaken
+
+1. Ga naar je [Apple Developer-account](https://developer.apple.com/account/).
+2. Onder `Certificaten, Identifiers en Profielen`, klik op `Identifiers` en registreer een nieuwe App ID. Gebruik het formaat (com.example.app).
+3. Onder dezelfde pagina klik op `Certificaten` en genereer nieuwe certificaten voor Mac App Store-distributie. Download ze en importeer de certificaten in Keychain op je lokale machine.
+
+#### App indienen
+
+1. Ga naar de [App Store Connect-website](https://appstoreconnect.apple.com/apps).
+2. Registreer een nieuwe applicatie en koppel de bundle ID die je hebt aangemaakt in de vorige stap.
+3. Vul je app aan met de juiste screenshots, beschrijvingen, etc. zoals vereist door Apple.
+4. Maak een nieuwe versie van je app aan.
+
+#### Provisioningprofiel aanmaken
+
+1. Ga naar de [Apple Developer-profielen](https://developer.apple.com/account/resources/profiles/list)-pagina.
+2. Voeg een nieuw provisioningprofiel toe voor Mac App Store-distributie.
+3. Stel het profieltype in als Mac en selecteer de App ID voor de bovenstaande applicatie.
+4. Selecteer het Mac App Distribution-certificaat.
+5. Geef het provisioningprofiel een naam en download het gecreëerde profiel.
+
+## Proces voor de Mac App Store
+
+#### Apple's App Sandbox inschakelen
+
+Apps die naar de Mac App Store worden ingediend, moeten draaien onder de [App Sandbox](https://developer.apple.com/app-sandboxing/) van Apple. Je moet een `entitlements.plist`-bestand aanmaken voor dit om te werken. De aanbeveling is om dit bestand aan te maken onder deze locatie `{PROJECT_DIR}/build/darwin/entitlements.plist`.
+
+**Voorbeeld Entitlements-bestand**
+
+Dit is een voorbeeld entitlements-bestand van de [RiftShare](https://github.com/achhabra2/riftshare)-app. Voor referentie, voeg alsjeblieft in de entitlements de vereisten van je app toe. Raadpleeg [deze site](https://developer.apple.com/documentation/bundleresources/entitlements) voor meer informatie. Je moet het Team ID en de App-naam vervangen door degene die je hierboven hebt geregistreerd.
+
+```xml title="entitlements.plist"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <key>com.apple.security.network.server</key>
+    <true/>
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <key>com.apple.security.files.downloads.read-write</key>
+    <true/>
+    <key>com.apple.application-identifier</key>
+    <string>TEAM_ID.APP_NAME</string>
+    <key>com.apple.developer.team-identifier</key>
+    <string>TEAM_ID</string>
+</dict>
+</plist>
+```
+
+**Voeg het ingesloten provisioningprofiel toe**
+
+Het hierboven gemaakte provisioningprofiel moet worden toegevoegd aan de root van de applicatie. Het moet de naam embedded.provisionprofile hebben.
+
+#### Bouw en onderteken het app-pakket
+
+Het volgende is een voorbeeldscript voor het bouwen en ondertekenen van je app voor indiening bij de Mac App Store. Het gaat ervan uit dat je het script uitvoert vanuit de hoofdmap van je project.
+
+Let op: de certificaten voor het ondertekenen van de app en het ondertekenen van de installer zijn verschillend. Zorg ervoor dat beide geïmporteerd zijn in Keychain. Vind de strings in Keychain en voeg ze hieronder in. Vul hieronder je certificaatnamen en appnaam in. Door het volgende script uit te voeren, wordt een ondertekend `app.pkg`-bestand gegenereerd in de hoofdmap van je app.
+
+```bash title="macappstore-build.sh"
+#!/bin/bash
+
+APP_CERTIFICATE="3rd Party Mac Developer Application: YOUR NAME (CODE)"
+PKG_CERTIFICATE="3rd Party Mac Developer Installer: YOUR NAME (CODE)"
+APP_NAME="YourApp"
+
+wails build -platform darwin/universal -clean
+
+cp ./embedded.provisionprofile "./build/bin/$APP_NAME.app/Contents"
+
+codesign --timestamp --options=runtime -s "$APP_CERTIFICATE" -v --entitlements ./build/darwin/entitlements.plist ./build/bin/$APP_NAME.app
+
+productbuild --sign "$PKG_CERTIFICATE" --component ./build/bin/$APP_NAME.app /Applications ./$APP_NAME.pkg
+```
+
+#### App-bundel uploaden
+
+Je moet het gegenereerde pakketbestand uploaden en eraan koppelen voordat je het kunt indienen voor beoordeling.
+
+1. Download de [Transporter-app](https://apps.apple.com/us/app/transporter/id1450874784) van de Mac App Store.
+2. Open de app en log in met je Apple ID.
+3. Klik op het + teken en selecteer het `APP_NAME.pkg`-bestand dat je hebt gegenereerd in de vorige stap. Upload het.
+4. Ga terug naar de [App Store Connect](https://appstoreconnect.apple.com/apps)-site en ga terug naar je app-indiening. Selecteer de versie die je klaar wilt maken om beschikbaar te zijn in de App Store. Onder `Build` selecteer je het pakket dat je hebt geüpload via Transporter.
+
+Dat is het! Je kunt nu de site gebruiken om je app ter beoordeling in te dienen. Na een paar werkdagen, als alles goed gaat, zou je je app live moeten zien op de Mac App Store.

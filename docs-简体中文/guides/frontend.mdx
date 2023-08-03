@@ -1,0 +1,72 @@
+# 前端
+
+## 脚本注入
+
+当Wails提供您的`index.html`时，默认情况下，它会将2个脚本条目注入到`<body>`标签中，以加载`/wails/ipc.js`和`/wails/runtime.js`。这些文件分别安装了绑定和运行时。
+
+下面的代码显示了默认情况下它们被注入的位置：
+
+```html
+<html>
+  <head>
+    <title>注入示例</title>
+    <link rel="stylesheet" href="/main.css" />
+    <!--     <script src="/wails/ipc.js"></script> -->
+    <!--     <script src="/wails/runtime.js"></script> -->
+  </head>
+
+  <body data-wails-drag>
+    <div class="logo"></div>
+    <div class="result" id="result">请在下方输入您的姓名👇</div>
+    <div class="input-box" id="input" data-wails-no-drag>
+      <input class="input" id="name" type="text" autocomplete="off" />
+      <button class="btn" onclick="greet()">问候</button>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>
+```
+
+### 覆盖默认的脚本注入
+
+为了给开发者提供更大的灵活性，可以使用meta标签来自定义此行为：
+
+```html
+<meta name="wails-options" content="[options]" />
+```
+
+选项如下：
+
+| 值                   | 描述                                                |
+| ------------------- | ---------------------------------------------------- |
+| noautoinjectruntime | 禁用自动注入`/wails/runtime.js`                       |
+| noautoinjectipc     | 禁用自动注入`/wails/ipc.js`                           |
+| noautoinject        | 禁用所有脚本的自动注入                                |
+
+可以使用多个选项，只要它们用逗号分隔。
+
+以下代码是完全有效的，并且与自动注入版本的功能相同：
+
+```html
+<html>
+  <head>
+    <title>注入示例</title>
+    <meta name="wails-options" content="noautoinject" />
+    <link rel="stylesheet" href="/main.css" />
+  </head>
+
+  <body data-wails-drag>
+    <div class="logo"></div>
+    <div class="result" id="result">请在下方输入您的姓名👇</div>
+    <div class="input-box" id="input" data-wails-no-drag>
+      <input class="input" id="name" type="text" autocomplete="off" />
+      <button class="btn" onclick="greet()">问候</button>
+    </div>
+
+    <script src="/wails/ipc.js"></script>
+    <script src="/wails/runtime.js"></script>
+    <script src="/main.js"></script>
+  </body>
+</html>
+```

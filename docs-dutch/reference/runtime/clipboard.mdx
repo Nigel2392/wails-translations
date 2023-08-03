@@ -1,0 +1,24 @@
+# Klembord
+
+Dit gedeelte van de runtime biedt toegang tot het klembord van het besturingssysteem.<br/>
+De huidige implementatie behandelt alleen tekst.
+
+### ClipboardGetText
+
+Deze methode leest de momenteel opgeslagen tekst van het klembord.
+
+Go: `ClipboardGetText(ctx context.Context) (string, error)`<br/>
+Retourneert: een string (als het klembord leeg is, wordt een lege string geretourneerd) of een foutmelding.
+
+JS: `ClipboardGetText(): Promise<string>`<br/>
+Retourneert: een promise met een string resultaat (als het klembord leeg is, wordt een lege string geretourneerd).
+
+### ClipboardSetText
+
+Deze methode schrijft een tekst naar het klembord.
+
+Go: `ClipboardSetText(ctx context.Context, text string) error`<br/>
+Retourneert: een foutmelding als er een is.
+
+JS: `ClipboardSetText(text: string): Promise<boolean>`<br/>
+Retourneert: een promise met een waar resultaat als de tekst succesvol op het klembord is ingesteld, anders false.

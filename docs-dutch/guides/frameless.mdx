@@ -1,0 +1,87 @@
+# Frameless toepassingen
+
+Wails ondersteunt toepassingen zonder frames. Dit kan worden bereikt door het gebruik van het [frameless](../reference/options.mdx#frameless) veld in [Toepassingsopties](../reference/options.mdx#application-options).
+
+Wails biedt een eenvoudige oplossing voor het slepen van het venster: Elk HTML-element dat de CSS-stijl `--wails-draggable:drag` heeft, zal fungeren als een "slepen-handvat". Deze eigenschap is van toepassing op alle kinderelementen. Als u wilt aangeven dat een genesteld element niet moet worden gesleept, gebruik dan de attribuut '--wails-draggable:no-drag' op dat element.
+
+```html
+<html>
+  <head>
+    <link rel="stylesheet" href="/main.css" />
+  </head>
+
+  <body style="--wails-draggable:drag">
+    <div id="logo"></div>
+    <div id="input" style="--wails-draggable:no-drag">
+      <input id="name" type="text" />
+      <button onclick="greet()">Begroeten</button>
+    </div>
+    <div id="result"></div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>
+```
+
+Voor sommige projecten is het gebruik van een CSS-variabele mogelijk niet mogelijk vanwege dynamische styling. In dat geval kunt u de toepassingsopties `CSSDragProperty` en `CSSDragValue` gebruiken om een eigenschap en waarde te definiëren die worden gebruikt om sleepbare gebieden aan te geven:
+
+```go title=main.go
+package main
+
+import (
+    "embed"
+
+    "github.com/wailsapp/wails/v2"
+    "github.com/wailsapp/wails/v2/pkg/options"
+    "github.com/wailsapp/wails/v2/pkg/options/assetserver"
+)
+
+//go:embed all:frontend/dist
+var assets embed.FS
+
+func main() {
+    // Maak een instantie van de app structuur
+    app := NewApp()
+
+    // Creëer applicatie met opties
+    err := wails.Run(&options.App{
+        Title:  "alwaysontop",
+        Width:  1024,
+        Height: 768,
+        AssetServer: &assetserver.Options{
+          Assets: assets,
+        },
+        Frameless:       true,
+        CSSDragProperty: "widows",
+        CSSDragValue:    "1",
+        Bind: []interface{}{
+          app,
+        },
+    })
+
+    if err != nil {
+        println("Fout:", err)
+    }
+}
+```
+
+```html title=index.html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>alwaysontop</title>
+  </head>
+  <body style="widows: 1">
+    <div id="app"></div>
+    <script src="./src/main.js" type="module"></script>
+  </body>
+</html>
+```
+
+:::info Volledig scherm
+
+Als u uw applicatie toestaat om volledig scherm te gaan, wordt deze sleepfunctionaliteit uitgeschakeld.
+
+:::

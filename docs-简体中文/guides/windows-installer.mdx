@@ -1,0 +1,59 @@
+# NSIS安装程序
+
+```mdx-code-block
+<p style={{ "text-align": "center" }}>
+  <img
+    src={require("@site/static/img/nsis.webp").default}
+    style={{ "max-width": "50%" }}
+  />
+  <br />
+</p>
+```
+
+Wails支持使用[NSIS安装程序](https://nsis.sourceforge.io/)生成Windows安装程序。
+
+## 安装NSIS
+
+### Windows
+
+安装程序可在[NSIS下载](https://nsis.sourceforge.io/Download)页面上获得。
+
+如果您使用chocolatey软件包管理器，请运行以下脚本：
+
+```
+choco install nsis
+```
+
+如果您手动安装NSIS，您需要将包含`makensis.exe`的_Bin_文件夹添加到您的NSIS安装路径中。
+[这里](https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/)是一个关于如何在Windows上添加路径的好教程。
+
+### Linux
+
+`nsis`包应该可以通过您的发行版软件包管理器获得。
+
+### MacOS
+
+NSIS可以通过Homebrew安装：`brew install nsis`。
+
+## 生成安装程序
+
+创建新项目时，Wails会在`build/windows/installer`中生成NSIS配置文件。配置数据从`installer/info.json`中读取，该文件配置为使用项目的`wails.json`的Info部分：
+
+```json
+// ...
+ "Info": {
+    "companyName": "My Company Name",
+    "productName": "Wails Vite",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright.........",
+    "comments": "Built using Wails (https://wails.io)"
+  },
+```
+
+要为您的应用程序生成安装程序，请在`wails build`中使用`-nsis`标志：
+
+```
+wails build -nsis
+```
+
+安装程序现在将在`build/bin`目录中可用。

@@ -1,0 +1,40 @@
+# Geobfusceerde builds
+
+Wails ondersteunt het obfusceren van uw applicatie met behulp van [garble](https://github.com/burrowers/garble).
+
+Om een geobfusceerde build te produceren, kunt u de `-obfuscate` vlag gebruiken met het `wails build` commando:
+
+```bash
+wails build -obfuscated
+```
+
+Om de obfuscatie-instellingen aan te passen, kunt u de `-garbleargs` vlag gebruiken:
+
+```bash
+wails build -obfuscated -garbleargs "-literals -tiny -seed=myrandomseed"
+```
+
+Deze instellingen kunnen worden opgeslagen in uw [projectconfiguratie](../referentie/projectconfiguratie).
+
+## Hoe het werkt
+
+Bij een standaard build zijn alle gebonden methoden beschikbaar in de frontend onder de `window.go` variabele. Wanneer deze methoden worden aangeroepen, wordt de overeenkomstige backend-methode aangeroepen met behulp van de volledig gekwalificeerde functienaam. Bij het gebruik van een geobfusceerde build worden methoden gebonden met behulp van een ID in plaats van een naam. De genererde bindings in de `wailsjs` directory gebruiken deze IDs om de backend-functies aan te roepen.
+
+:::note
+
+Om ervoor te zorgen dat uw applicatie werkt in geobfusceerde modus, moet u de gegenereerde bindings onder de `wailsjs` directory gebruiken in uw applicatie.
+
+:::
+
+## Voorbeeld
+
+Het importeren van de "Greet" methode van de bindings als volgt:
+
+```js
+import { Greet } from "../../wailsjs/go/main/App";
+
+// knippen
+Greet("Wereld");
+```
+
+zorgt ervoor dat de methode correct werkt in geobfusceerde modus, omdat de bindings opnieuw worden gegenereerd met IDs en het aanroepmechanisme wordt bijgewerkt.

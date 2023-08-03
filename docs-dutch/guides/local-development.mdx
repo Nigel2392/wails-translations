@@ -1,0 +1,57 @@
+# Lokale ontwikkeling
+
+## Overzicht
+
+Wails is voortdurend in ontwikkeling en nieuwe releases worden regelmatig "getagd". Dit gebeurt meestal wanneer alle nieuwere code op `master` is getest en bevestigd werkt. Als je een bugfix of functie nodig hebt die nog niet in een release is opgenomen, is het mogelijk om de nieuwste "bleeding edge" versie te gebruiken met de volgende stappen:
+
+- `git clone https://github.com/wailsapp/wails`
+- `cd wails/v2/cmd/wails`
+- `go install`
+
+LET OP: De directory waarin je het project hebt gekloond, wordt nu "clonedir" genoemd.
+
+De Wails CLI is nu bijgewerkt naar de allernieuwste versie.
+
+### Je project bijwerken
+
+Om projecten bij te werken naar de nieuwste versie van de Wails-bibliotheek, werk je het `go.mod`-bestand van het project bij en zorg je ervoor dat de volgende regel onderaan het bestand staat:
+
+`replace github.com/wailsapp/wails/v2 => <clonedir>`
+
+Voorbeeld:
+
+Op Windows:
+`replace github.com/wailsapp/wails/v2 => C:\Users\leaan\Documents\wails-v2-beta\wails\v2`
+
+Op 'nix:
+`replace github.com/wailsapp/wails/v2 => /home/me/projects/wails/v2`
+
+Om terug te gaan naar een stabiele versie, voer je het volgende uit:
+
+`go install github.com/wailsapp/wails/v2/cmd/wails@latest`
+
+## Een branch testen
+
+Als je een branch wilt testen, volg dan de bovenstaande instructies, maar zorg ervoor dat je de branch die je wilt testen overschakelt voordat je installeert:
+
+- `git clone https://github.com/wailsapp/wails`
+- `cd wails`
+- `git checkout -b branch-to-test --track origin/branch-to-test`
+- `cd v2/cmd/wails`
+- `go install`
+
+Zorg ervoor dat je [je project bijwerkt](#je-project-bijwerken) zoals hierboven beschreven.
+
+## Een PR testen
+
+Als je een PR wilt testen, volg dan de bovenstaande instructies, maar zorg ervoor dat je de PR ophaalt en de branch overschakelt voordat je installeert. Vervang alstublieft `[IDofThePR]` door het ID van de PR dat wordt getoond op github.com:
+
+- `git clone https://github.com/wailsapp/wails`
+- `cd wails`
+- `git fetch -u origin pull/[IDofThePR]/head:test/pr-[IDofThePR]`
+- `git checkout test/pr-[IDofThePR]`
+- `git reset --hard HEAD`
+- `cd v2/cmd/wails`
+- `go install`
+
+Zorg ervoor dat je [je project bijwerkt](#je-project-bijwerken) zoals hierboven beschreven.

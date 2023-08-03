@@ -1,0 +1,40 @@
+# 事件
+
+Wails运行时提供了一个统一的事件系统，可以通过Go或JavaScript发出或接收事件。
+可以选择性地传递数据给事件。监听器将以本地数据类型接收数据。
+
+### EventsOn
+
+该方法为给定的事件名称设置一个监听器。当类型为`eventName`的事件[被触发](#EventsEmit)时，将触发回调函数。
+任何附加的数据将传递给回调函数。它返回一个用于取消监听器的函数。
+
+Go：`EventsOn(ctx context.Context, eventName string, callback func(optionalData ...interface{})) func()`<br/>
+JS：`EventsOn(eventName string, callback function(optionalData?: any)): () => void`
+
+### EventsOff
+
+该方法取消注册给定事件名称的监听器，可以通过`additionalEventNames`选择性地取消注册多个监听器。
+
+Go：`EventsOff(ctx context.Context, eventName string, additionalEventNames ...string)`<br/>
+JS：`EventsOff(eventName string, ...additionalEventNames)`
+
+### EventsOnce
+
+该方法为给定的事件名称设置一个监听器，但只会触发一次。它返回一个取消监听器的函数。
+
+Go: `EventsOnce(ctx context.Context, eventName string, callback func(optionalData ...interface{})) func()`<br/>
+JS: `EventsOnce(eventName string, callback function(optionalData?: any)): () => void`
+
+### EventsOnMultiple
+
+该方法为给定的事件名称设置一个监听器，但最多只会触发`counter`次。它返回一个取消监听器的函数。
+
+Go: `EventsOnMultiple(ctx context.Context, eventName string, callback func(optionalData ...interface{}), counter int) func()`<br/>
+JS: `EventsOnMultiple(eventName string, callback function(optionalData?: any), counter int): () => void`
+
+### EventsEmit
+
+该方法触发给定的事件。可以通过事件传递可选的数据。这将触发任何事件监听器。
+
+Go: `EventsEmit(ctx context.Context, eventName string, optionalData ...interface{})`<br/>
+JS: `EventsEmit(eventName: string, ...optionalData: any)`

@@ -1,0 +1,889 @@
+# Opties
+
+## Applicatieopties
+
+De `Options.App`-structuur bevat de applicatieconfiguratie.
+Het wordt doorgegeven aan de `wails.Run()`-methode:
+
+```go title="Voorbeeld"
+import (
+    "github.com/wailsapp/wails/v2/pkg/options"
+    "github.com/wailsapp/wails/v2/pkg/options/assetserver"
+    "github.com/wailsapp/wails/v2/pkg/options/linux"
+    "github.com/wailsapp/wails/v2/pkg/options/mac"
+    "github.com/wailsapp/wails/v2/pkg/options/windows"
+)
+
+func main() {
+
+    err := wails.Run(&options.App{
+        Title:              "Menu Demo",
+        Width:              800,
+        Height:             600,
+        DisableResize:      false,
+        Fullscreen:         false,
+        WindowStartState:   options.Maximized,
+        Frameless:          true,
+        MinWidth:           400,
+        MinHeight:          400,
+        MaxWidth:           1280,
+        MaxHeight:          1024,
+        StartHidden:        false,
+        HideWindowOnClose:  false,
+        BackgroundColour:   &options.RGBA{R: 0, G: 0, B: 0, A: 255},
+        AlwaysOnTop:        false,
+        AssetServer: &assetserver.Options{
+            Assets:     assets,
+            Handler:    assetsHandler,
+            Middleware: assetsMiddleware,
+		},
+        Menu:               app.applicationMenu(),
+        Logger:             nil,
+        LogLevel:           logger.DEBUG,
+        LogLevelProduction: logger.ERROR,
+        OnStartup:          app.startup,
+        OnDomReady:         app.domready,
+        OnShutdown:         app.shutdown,
+        OnBeforeClose:      app.beforeClose,
+        CSSDragProperty:   "--wails-draggable",
+        CSSDragValue:      "drag",
+        EnableDefaultContextMenu: false,
+        EnableFraudulentWebsiteDetection: false,
+        ZoomFactor:           1.0,
+        IsZoomControlEnabled: false,
+        Bind: []interface{}{
+            app,
+        },
+        ErrorFormatter: func(err error) any { return err.Error() },
+        Windows: &windows.Options{
+            WebviewIsTransparent:              false,
+            WindowIsTranslucent:               false,
+            BackdropType:                      windows.Mica,
+            DisableWindowIcon:                 false,
+            DisableFramelessWindowDecorations: false,
+            WebviewUserDataPath:               "",
+            WebviewBrowserPath:                "",
+            Theme:                             windows.SystemDefault,
+            CustomTheme: &windows.ThemeSettings{
+                DarkModeTitleBar:   windows.RGB(20, 20, 20),
+                DarkModeTitleText:  windows.RGB(200, 200, 200),
+                DarkModeBorder:     windows.RGB(20, 0, 20),
+                LightModeTitleBar:  windows.RGB(200, 200, 200),
+                LightModeTitleText: windows.RGB(20, 20, 20),
+                LightModeBorder:    windows.RGB(200, 200, 200),
+            },
+            // Gebruikersberichten die kunnen worden aangepast
+            Messages: &windows.Messages{},
+            // OnSuspend wordt aangeroepen wanneer Windows in de energiebesparende modus gaat
+            OnSuspend: nil,
+            // OnResume wordt aangeroepen wanneer Windows terugkeert uit de energiebesparende modus
+            OnResume: nil,
+			WebviewGpuDisabled: false,
+        },
+        Mac: &mac.Options{
+            TitleBar: &mac.TitleBar{
+                TitlebarAppearsTransparent: true,
+                HideTitle:                  false,
+                HideTitleBar:               false,
+                FullSizeContent:            false,
+                UseToolbar:                 false,
+                HideToolbarSeparator:       true,
+            },
+			Appearance:           mac.NSAppearanceNameDarkAqua,
+            WebviewIsTransparent: true,
+            WindowIsTranslucent:  false,
+            About: &mac.AboutInfo{
+                Title:   "Mijn Applicatie",
+                Message: "© 2021 Ik",
+                Icon:    icon,
+            },
+        },
+        Linux: &linux.Options{
+            Icon: icon,
+            WindowIsTranslucent: false,
+			WebviewGpuPolicy: linux.WebviewGpuPolicyAlways,
+        },
+        Debug: options.Debug{
+            OpenInspectorOnStartup: false,
+        },
+    })
+
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+
+```
+
+### Titel
+
+De tekst die wordt weergegeven in de titelbalk van het venster.
+
+Naam: Titel<br/>
+Type: `string`
+
+### Breedte
+
+De initiële breedte van het venster.
+
+Naam: Breedte<br/>
+Type: `int`<br/>
+Standaard: 1024.
+
+### Hoogte
+
+De initiële hoogte van het venster.
+
+Naam: Hoogte<br/>
+Type: `int`<br/>
+Standaard: 768
+
+### UitschakelenResize
+
+Standaard kan het hoofdvenster worden vergroot of verkleind. Door dit in te stellen op `true` blijft het een vaste grootte.
+
+Naam: UitschakelenResize<br/>
+Type: `bool`
+
+### VolledigScherm
+
+Verouderd: Gebruik [WindowStartState](#windowstartstate) in plaats daarvan.
+
+### WindowStartState
+
+Definieert hoe het venster zich moet presenteren bij het opstarten.
+
+| Waarde      | Win | Mac | Lin |
+| ---------- | --- | --- | --- |
+| VolledigScherm | ✅  | ✅  | ✅  |
+| Gemaximaliseerd  | ✅  | ✅  | ✅  |
+| Geminimaliseerd  | ✅  | ❌  | ✅  |
+
+Naam: WindowStartState<br/>
+Type: `options.WindowStartState`
+
+### Frameless
+
+Wanneer ingesteld op `true`, heeft het venster geen randen of titelbalk.
+Zie ook [Frameless Windows](../guides/frameless.mdx).
+
+Naam: Frameless<br/>
+Type: `bool`
+
+### MinimaleBreedte
+
+Hiermee wordt de minimale breedte van het venster ingesteld. Als de waarde die is opgegeven in `Breedte` kleiner is dan deze waarde,
+wordt het venster standaard ingesteld op `MinimaleBreedte`.
+
+Naam: MinimaleBreedte<br/>
+Type: `int`
+
+### MinimaleHoogte
+
+Hiermee wordt de minimale hoogte van het venster ingesteld. Als de waarde die is opgegeven in `Hoogte` kleiner is dan deze waarde,
+wordt het venster standaard ingesteld op `MinimaleHoogte`.
+
+Naam: MinimaleHoogte<br/>
+Type: `int`
+
+### MaximaleBreedte
+
+Hiermee wordt de maximale breedte van het venster ingesteld. Als de waarde die is opgegeven in `Breedte` groter is dan deze waarde,
+wordt het venster standaard ingesteld op `MaximaleBreedte`.
+
+Naam: MaximaleBreedte<br/>
+Type: `int`
+
+### MaximaleHoogte
+
+Hiermee wordt de maximale hoogte van het venster ingesteld. Als de waarde die is opgegeven in `Hoogte` groter is dan deze waarde,
+wordt het venster standaard ingesteld op `MaximaleHoogte`.
+
+Naam: MaximaleHoogte<br/>
+Type: `int`
+
+### StartHidden
+
+Wanneer ingesteld op `true`, wordt de applicatie verborgen totdat [WindowShow](../reference/runtime/window.mdx#windowshow) wordt aangeroepen.
+
+Naam: StartHidden<br/>
+Type: `bool`
+
+### HideWindowOnClose
+
+Standaard sluit het venster de applicatie. Als dit is ingesteld op `true`, wordt het venster verborgen in plaats van gesloten.
+
+Naam: HideWindowOnClose<br/>
+Type: `bool`
+
+### BackgroundColour
+
+Deze waarde is de standaard achtergrondkleur van het venster.
+Voorbeeld: options.NewRGBA(255,0,0,128) - Rood met 50% transparantie
+
+Naam: BackgroundColour<br/>
+Type: `*options.RGBA`<br/>
+Standaard: wit
+
+### AlwaysOnTop
+
+Geeft aan dat het venster boven andere vensters moet blijven wanneer het de focus verliest.
+
+Naam: AlwaysOnTop<br/>
+Type: `bool`
+
+### Assets
+
+Verouderd: Gebruik in plaats daarvan Assets op [AssetServer specifieke opties](#assetserver).
+
+### AssetsHandler
+
+Verouderd: Gebruik in plaats daarvan AssetsHandler op [AssetServer specifieke opties](#assetserver).
+
+### AssetServer
+
+Dit definieert specifieke opties voor AssetServer. Hiermee kunt u de AssetServer aanpassen met statische assets, assets dynamisch serveren met een `http.Handler` of een `assetserver.Middleware` in de verzoekketen opnemen.
+
+Niet alle functies van een `http.Request` worden momenteel ondersteund, raadpleeg de volgende functiematrix:
+
+| Functie               | Win | Mac | Lin    |
+| --------------------- | --- | --- | ------ |
+| GET                   | ✅  | ✅  | ✅      |
+| POST                  | ✅  | ✅  | ✅ [^1] |
+| PUT                   | ✅  | ✅  | ✅ [^1] |
+| PATCH                 | ✅  | ✅  | ✅ [^1] |
+| DELETE                | ✅  | ✅  | ✅ [^1] |
+| Request Headers       | ✅  | ✅  | ✅ [^1] |
+| Request Body          | ✅  | ✅  | ✅ [^2] |
+| Request Body Streaming| ✅  | ✅  | ✅ [^2] |
+| Response StatusCodes  | ✅  | ✅  | ✅ [^1] |
+| Response Headers      | ✅  | ✅  | ✅ [^1] |
+| Response Body         | ✅  | ✅  | ✅      |
+| Response Body Streaming| ❌  | ✅  | ✅      |
+| WebSockets            | ❌  | ❌  | ❌      |
+| HTTP Redirects 30x    | ✅  | ❌  | ❌      |
+
+[^1]: Hiervoor is ondersteuning vereist voor WebKit2GTK 2.36+ en uw app moet worden gebouwd met de build-tag `webkit2_36` om ondersteuning voor deze functie te activeren. Dit verhoogt ook de minimale vereiste van WebKit2GTK naar 2.36 voor uw app.
+[^2]: Hiervoor is ondersteuning vereist voor WebKit2GTK 2.40+ en uw app moet worden gebouwd met de build-tag `webkit2_40` om ondersteuning voor deze functie te activeren. Dit verhoogt ook de minimale vereiste van WebKit2GTK naar 2.40 voor uw app.
+
+Naam: AssetServer<br/>
+Type: `*assetserver.Options`
+
+#### Assets
+
+De statische frontend assets die door de applicatie worden gebruikt.
+
+Een GET-verzoek wordt eerst geprobeerd te serveren vanuit deze `fs.FS`. Als de `fs.FS` voor dat bestand `os.ErrNotExist` retourneert, zal het verzoek worden doorgestuurd naar de [Handler](#handler) en zal worden geprobeerd het GET-verzoek van daaruit te serveren.
+
+Indien ingesteld op nil, zullen alle GET-verzoeken worden doorgestuurd naar de [Handler](#handler).
+
+Naam: Assets<br/>
+Type: `fs.FS`
+
+#### Handler
+
+De assets handler is een generieke `http.Handler` voor fallback afhandeling van assets die niet gevonden kunnen worden.
+
+De handler wordt aangeroepen voor elk GET-verzoek dat niet kan worden geserveerd vanuit [Assets](#assets), vanwege `os.ErrNotExist`. Bovendien zullen alle niet-GET-verzoeken altijd worden geserveerd vanuit deze Handler.
+Indien niet gedefinieerd, is het resultaat als volgt in gevallen waarin de Handler zou zijn aangeroepen:
+
+- GET-verzoek: `http.StatusNotFound`
+- Overig verzoek: `http.StatusMethodNotAllowed`
+
+LET OP: Bij gebruik in combinatie met een Frontend DevServer kunnen er beperkingen zijn, bijv. Vite serveert de index.html op elk pad dat geen bestandsextensie bevat.
+
+Naam: AssetsHandler<br/>
+Type: `http.Handler`
+
+#### Middleware
+
+Middleware is een HTTP Middleware waarmee kan worden ingehaakt op de AssetServer-verzoekketen. Hiermee kan de standaard verzoekafhandelaar dynamisch worden overgeslagen, bijv. gespecialiseerde routing implementeren, etc.
+De Middleware wordt aangeroepen om een nieuwe `http.Handler` te bouwen die wordt gebruikt door de AssetSever en ontvangt ook de standaard handler die wordt gebruikt door de AssetServer als argument.
+
+Indien niet gedefinieerd, wordt de standaard AssetServer-verzoekketen uitgevoerd.
+
+Naam: Middleware<br/>
+Type: `assetserver.Middleware`
+
+### Menu
+
+Het menu dat door de applicatie moet worden gebruikt. Meer details over menu's vindt u in de [Menu Referentie](../reference/runtime/menu.mdx).
+
+:::note
+
+Op Mac wordt, als er geen menu is opgegeven, een standaardmenu gemaakt.
+
+:::
+
+Naam: Menu<br/>
+Type: `*menu.Menu`
+
+### Logger
+
+De logger die door de applicatie moet worden gebruikt. Meer details over logging vindt u in de [Log Referentie](../reference/runtime/log.mdx).
+
+Naam: Logger<br/>
+Type: `logger.Logger`<br/>
+Standaard: Logs naar Stdout
+
+### LogLevel
+
+Het standaard logniveau. Meer details over logging vindt u in de [Log Referentie](../reference/runtime/log.mdx).
+
+Naam: LogLevel<br/>
+Type: `logger.LogLevel`<br/>
+Standaard: `Info` in ontwikkelingsmodus, `Error` in productiemodus
+
+### LogLevelProduction
+
+Het standaard logniveau voor productiebuilds. Meer details over logging vindt u in de [Log Referentie](../reference/runtime/log.mdx).
+
+Naam: LogLevelProduction<br/>
+Type: `logger.LogLevel`<br/>
+Standaard: `Error`
+
+### OnStartup
+
+Deze callback wordt aangeroepen nadat de frontend is gemaakt, maar voordat `index.html` is geladen. Het krijgt de
+toepassingscontext.
+
+Naam: OnStartup<br/>
+Type: `func(ctx context.Context)`
+
+### OnDomReady
+
+Deze callback wordt aangeroepen nadat de frontend `index.html` en de bijbehorende bronnen heeft geladen. Het krijgt de
+toepassingscontext.
+
+Naam: OnDomReady<br/>
+Type: `func(ctx context.Context)`
+
+### OnShutdown
+
+Deze callback wordt aangeroepen nadat de frontend is vernietigd, vlak voordat de toepassing wordt afgesloten. Het krijgt de
+toepassingscontext.
+
+Naam: OnShutdown<br/>
+Type: `func(ctx context.Context)`
+
+### OnBeforeClose
+
+Als deze callback is ingesteld, wordt deze aangeroepen wanneer de toepassing wordt afgesloten, ofwel door op de knop voor het sluiten van het venster te klikken
+of door `runtime.Quit` aan te roepen. Het retourneren van true zorgt ervoor dat de toepassing doorgaat, false zal doorgaan met het afsluiten
+zoals gebruikelijk. Dit is handig om bevestiging van de gebruiker te vragen voordat ze het programma willen afsluiten.
+
+Voorbeeld:
+
+```go title=windowsapp.go
+func (b *App) beforeClose(ctx context.Context) (prevent bool) {
+    dialog, err := runtime.MessageDialog(ctx, runtime.MessageDialogOptions{
+        Type:          runtime.QuestionDialog,
+        Title:         "Afsluiten?",
+        Message:       "Weet u zeker dat u wilt afsluiten?",
+    })
+
+    if err != nil {
+        return false
+    }
+    return dialog != "Ja"
+}
+```
+
+Naam: OnBeforeClose<br/>
+Type: `func(ctx context.Context) bool`
+
+### CSSDragProperty
+
+Geeft de CSS-eigenschap aan die moet worden gebruikt om te bepalen welke elementen kunnen worden gebruikt om het venster te slepen. Standaard: `--wails-draggable`.
+
+Naam: CSSDragProperty<br/>
+Type: `string`
+
+### CSSDragValue
+
+Geeft aan welke waarde de stijl `CSSDragProperty` moet hebben om het venster te slepen. Standaard: `drag`.
+
+Naam: CSSDragValue<br/>
+Type: `string`
+
+### EnableDefaultContextMenu
+
+EnableDefaultContextMenu schakelt het standaard contextmenu van de browser in productie in.
+
+Standaard is het standaard contextmenu van de browser alleen beschikbaar in ontwikkeling en in een `-debug` of `-devtools` [build](../reference/cli.mdx#build) samen met de devtools inspector. Met deze optie kunt u het standaard contextmenu inschakelen in `productie`, terwijl de devtools inspector niet beschikbaar zal zijn, tenzij de `-devtools` build flag wordt gebruikt.
+
+Wanneer deze optie is ingeschakeld, wordt standaard het contextmenu alleen weergegeven voor tekstcontexten (waar knippen/kopiëren/plakken nodig is). Om dit gedrag te overschrijven, kunt u de CSS-eigenschap `--default-contextmenu` gebruiken op elk HTML-element (inclusief het `body`-element) met de volgende waarden:
+
+| CSS-stijl                      | Gedrag                                                                                                                                            |
+|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--default-contextmenu: auto;` | (**standaard**) toont het standaard contextmenu alleen als: contentEditable waar is OF tekst is geselecteerd OF het element een invoerveld of tekstgebied is |
+| `--default-contextmenu: show;` | toont altijd het standaard contextmenu                                                                                                           |
+| `--default-contextmenu: hide;` | verbergt altijd het standaard contextmenu                                                                                                         |
+
+Deze regel wordt geërfd zoals elke normale CSS-regel, dus nesting werkt zoals verwacht.
+
+:::note
+Deze filterfunctionaliteit is alleen ingeschakeld in productie, dus in ontwikkeling en in debug build is het volledige contextmenu altijd overal beschikbaar.
+:::
+
+:::warning
+Deze filterfunctionaliteit is GEEN beveiligingsmaatregel, de ontwikkelaar moet ervan uitgaan dat het volledige contextmenu altijd kan lekken en commando's kan bevatten zoals (Afbeelding downloaden, Opnieuw laden, Webpagina opslaan). Als dit een zorg is, MOET de ontwikkelaar het standaard contextmenu NIET inschakelen.
+:::
+
+
+Naam: EnableDefaultContextMenu<br/>
+Type: `bool`
+
+### EnableFraudulentWebsiteDetection
+
+EnableFraudulentWebsiteDetection schakelt scan-services in voor frauduleuze inhoud, zoals malware of phishingpogingen.
+Deze services kunnen informatie van uw app verzenden, zoals genavigeerde URL's en mogelijk andere inhoud, naar cloudservices van Apple en Microsoft.
+
+Naam: EnableFraudulentWebsiteDetection<br/>
+Type: `bool`
+
+### ZoomFactor
+
+Naam: ZoomFactor<br/>
+Type: `float64`
+
+Dit definieert de zoomfactor voor de WebView2. Dit is de optie die overeenkomt met de door de gebruiker geactiveerde zoom in of uit in Edge.
+
+### IsZoomControlEnabled
+
+Naam: IsZoomControlEnabled<br/>
+Type: `bool`
+
+Dit maakt het mogelijk dat de gebruiker de zoomfactor kan wijzigen. Houd er rekening mee dat de zoomfactor kan worden ingesteld in de opties terwijl het de gebruiker wordt verboden om deze tijdens runtime te wijzigen (bijvoorbeeld voor een kiosktoepassing of iets dergelijks).
+
+### Bind
+
+Een reeks instanties van de struct die methoden definieert die aan de frontend moeten worden gekoppeld.
+
+Naam: Bind<br/>
+Type: `[]interface{}`
+
+### ErrorFormatter
+
+Een functie die bepaalt hoe fouten worden opgemaakt wanneer ze worden geretourneerd door een JS-naar-Go methodeoproep. De geretourneerde waarde wordt geformatteerd als JSON.
+
+Naam: ErrorFormatter<br/>
+Type: `func (error) any`
+
+### Windows
+
+Hiermee worden [specifieke opties voor Windows](#windows) gedefinieerd.
+
+Naam: Windows<br/>
+Type: `*windows.Options`
+
+#### WebviewIsTransparent
+
+Als dit is ingesteld op `true`, wordt de achtergrond van de webview transparant wanneer een alfawaarde van `0` wordt gebruikt. Dit betekent dat als je `rgba(0,0,0,0)` gebruikt voor `background-color` in je CSS, het venster van de host erdoorheen wordt weergegeven. Vaak gecombineerd met [WindowIsTranslucent](#WindowIsTranslucent) om eruit te zien als een bevroren applicatie.
+
+Naam: WebviewIsTransparent<br/>
+Type: `bool`
+
+#### WindowIsTranslucent
+
+Als dit is ingesteld op `true`, wordt de achtergrond van het venster transparant. Vaak gecombineerd met [WebviewIsTransparent](#WebviewIsTransparent).
+
+Voor Windows 11-versies vóór build 22621 wordt de [BlurBehind](https://learn.microsoft.com/en-us/windows/win32/dwm/blur-ovw)-methode gebruikt voor transparantie, wat traag kan zijn. Voor Windows 11-versies na build 22621 wordt dit de nieuwere transparantietypes ingeschakeld die veel sneller zijn. Standaard wordt het type transparantie dat wordt gebruikt bepaald door Windows. Gebruik de [BackdropType](#BackdropType)-optie om dit te configureren.
+
+Naam: WindowIsTranslucent<br/>
+Type: `bool`
+
+#### BackdropType
+
+:::note
+
+Vereist Windows 11 build 22621 of hoger.
+
+:::
+
+Stelt het transparantietype van het venster in. Dit is alleen van toepassing als [WindowIsTranslucent](#WindowIsTranslucent) is ingesteld op `true`.
+
+Naam: BackdropType<br/>
+Type `windows.BackdropType`
+
+De waarde kan een van de volgende zijn:
+
+| Waarde   | Beschrijving                                                                                  |
+| ------- | ----------------------------------------------------------------------------------------- |
+| Auto    | Laat Windows bepalen welke achtergrond moet worden gebruikt                                   |
+| None    | Geen transparantie gebruiken                                                                  |
+| Acrylic | Gebruik [Acrylic](https://learn.microsoft.com/en-us/windows/apps/design/style/acrylic) effect |
+| Mica    | Gebruik [Mica](https://learn.microsoft.com/en-us/windows/apps/design/style/mica) effect       |
+| Tabbed  | Gebruik Tabbed. Dit is een achtergrond die vergelijkbaar is met Mica.                         |
+
+#### DisableWindowIcon
+
+Als dit is ingesteld op `true`, wordt het pictogram linksboven in de titelbalk verwijderd.
+
+Naam: DisableWindowIcon<br/>
+Type: `bool`
+
+#### DisableFramelessWindowDecorations
+
+Als dit is ingesteld op `true`, worden de vensterdecoraties in [Frameless](#Frameless)-modus verwijderd. Dit betekent dat er geen 'Aero Shadow' en geen 'Rounded Corners' worden weergegeven voor het venster. Houd er rekening mee dat 'Rounded Corners' alleen worden ondersteund in Windows 11.
+
+Naam: DisableFramelessWindowDecorations<br/>
+Type: `bool`
+
+#### WebviewUserDataPath
+
+Hiermee wordt het pad gedefinieerd waar de WebView2 de gebruikersgegevens opslaat. Als het leeg is, wordt `%APPDATA%\[BinaryName.exe]` gebruikt.
+
+Naam: WebviewUserDataPath<br/>
+Type: `string`
+
+#### WebviewBrowserPath
+
+Dit definieert het pad naar een directory met uitvoerbare bestanden en bibliotheken van WebView2. Als het leeg is, wordt de geïnstalleerde webview2 in het systeem gebruikt.
+
+Belangrijke informatie over de distributie van de vaste versie runtime:
+
+- [Hoe u de runtime kunt krijgen en extraheren](https://docs.microsoft.com/en-us/microsoft-edge/webview2/concepts/distribution#details-about-the-fixed-version-runtime-distribution-mode)
+- [Bekende problemen voor de vaste versie](https://docs.microsoft.com/en-us/microsoft-edge/webview2/concepts/distribution#known-issues-for-fixed-version)
+- [Het pad van de vaste versie van de WebView2 Runtime mag geen \Edge\Application\ bevatten](https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/webview2-idl?view=webview2-1.0.1245.22#createcorewebview2environmentwithoptions)
+
+Naam: WebviewBrowserPath<br/>
+Type: `string`
+
+#### Thema
+
+Minimum Windows-versie: Windows 10 2004/20H1
+
+Dit definieert het thema dat de applicatie moet gebruiken:
+
+| Waarde         | Beschrijving                                                                                                                                   |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| SystemDefault | _Standaard_. Het thema wordt gebaseerd op de systeemstandaard. Als de gebruiker hun thema wijzigt, wordt de applicatie bijgewerkt om de nieuwe instelling te gebruiken |
+| Donker          | De applicatie gebruikt uitsluitend een donker thema                                                                                             |
+| Licht         | De applicatie gebruikt uitsluitend een licht thema                                                                                            |
+
+Naam: Thema<br/>
+Type: `windows.Theme`
+
+#### CustomTheme
+
+:::note
+
+Minimum Windows-versie: Windows 10/11 2009/21H2 Build 22000
+
+:::
+
+Hiermee kunt u aangepaste kleuren specificeren voor de titelbalk, titeltekst en rand voor zowel de lichte als de donkere modus, evenals
+wanneer het venster actief of inactief is.
+
+Naam: CustomTheme<br/>
+Type: `windows.CustomTheme`
+
+##### CustomTheme type
+
+De structuur CustomTheme gebruikt `int32` om de kleurwaarden te specificeren. Deze zijn in het standaard(!) Windows-formaat van:
+`0x00BBGGAA`. Er is een hulpfunctie beschikbaar om RGB-conversies naar dit formaat uit te voeren: `windows.RGB(r,g,b uint8)`.
+
+OPMERKING: Elke niet-opgegeven waarde wordt standaard ingesteld op zwart.
+
+```go
+type ThemeSettings struct {
+	DarkModeTitleBar           int32
+	DarkModeTitleBarInactive   int32
+	DarkModeTitleText          int32
+	DarkModeTitleTextInactive  int32
+	DarkModeBorder             int32
+	DarkModeBorderInactive     int32
+	LightModeTitleBar          int32
+	LightModeTitleBarInactive  int32
+	LightModeTitleText         int32
+	LightModeTitleTextInactive int32
+	LightModeBorder            int32
+	LightModeBorderInactive    int32
+}
+```
+
+Voorbeeld:
+
+```go
+    CustomTheme: &windows.ThemeSettings{
+        // Thema om te gebruiken wanneer het venster actief is
+        DarkModeTitleBar:   windows.RGB(255, 0, 0),   // Rood
+        DarkModeTitleText:  windows.RGB(0, 255, 0),   // Groen
+        DarkModeBorder:     windows.RGB(0, 0, 255),   // Blauw
+        LightModeTitleBar:  windows.RGB(200, 200, 200),
+        LightModeTitleText: windows.RGB(20, 20, 20),
+        LightModeBorder:    windows.RGB(200, 200, 200),
+        // Thema om te gebruiken wanneer het venster inactief is
+        DarkModeTitleBarInactive:   windows.RGB(128, 0, 0),
+        DarkModeTitleTextInactive:  windows.RGB(0, 128, 0),
+        DarkModeBorderInactive:     windows.RGB(0, 0, 128),
+        LightModeTitleBarInactive:  windows.RGB(100, 100, 100),
+        LightModeTitleTextInactive: windows.RGB(10, 10, 10),
+        LightModeBorderInactive:    windows.RGB(100, 100, 100),
+    },
+```
+
+#### Berichten
+
+Een structuur van strings die door de webview2-installateur wordt gebruikt als er geen geldige webview2-runtime wordt gevonden.
+
+Naam: Berichten<br/>
+Type: `*windows.Berichten`
+
+Pas dit aan voor elke taal die u wilt ondersteunen.
+
+#### ResizeDebounceMS
+
+ResizeDebounceMS is de tijd die nodig is om het opnieuw tekenen van webview2 te vertragen bij het wijzigen van de grootte van het venster.
+De standaardwaarde (0) zal het opnieuw tekenen zo snel mogelijk uitvoeren.
+
+Naam: ResizeDebounceMS<br/>
+Type: `uint16`
+
+#### OnSuspend
+
+Als ingesteld, wordt deze functie aangeroepen wanneer Windows overschakelt naar de energiebesparende modus (sluimerstand/hibernate).
+
+Naam: OnSuspend<br/>
+Type: `func()`
+
+#### OnResume
+
+Als ingesteld, wordt deze functie aangeroepen wanneer Windows weer actief wordt vanuit de energiebesparende modus (sluimerstand/hibernate).
+
+Naam: OnResume<br/>
+Type: `func()`
+
+#### WebviewGpuIsDisabled
+
+Door dit in te stellen op `true` wordt hardwareversnelling van de GPU uitgeschakeld voor de webview.
+
+Naam: WebviewGpuIsDisabled<br/>
+Type: `bool`
+
+### Mac
+
+Dit definieert [Mac-specifieke opties](#mac).
+
+Naam: Mac<br/>
+Type: `*mac.Opties`
+
+#### Titelbalk
+
+De structuur Titelbalk biedt de mogelijkheid om het uiterlijk van de titelbalk te configureren.
+
+Naam: Titelbalk<br/>
+Type: [`*mac.Titelbalk`](#titelbalk-structuur)
+
+##### Titelbalk structuur
+
+De titelbalk van de applicatie kan worden aangepast met behulp van de opties van de titelbalk:
+
+```go
+type Titelbalk struct {
+	TitelbalkVerschijntTransparant bool
+	TitelVerbergen                  bool
+	TitelbalkVerbergen              bool
+	VolledigeInhoud                bool
+	GebruikWerkbalk                 bool
+	WerkbalkScheiderVerbergen       bool
+}
+```
+
+| Naam                        | Beschrijving                                                                                                                                                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| TitelbalkVerschijntTransparant | Maakt de titelbalk transparant. Dit heeft het effect dat de titelbalk wordt verborgen en de inhoud het venster vult. [Apple Docs](https://developer.apple.com/documentation/appkit/nswindow/1419167-titlebarappearstransparent?language=objc) |
+| TitelVerbergen                  | Verbergt de titel van het venster. [Apple Docs](https://developer.apple.com/documentation/appkit/nswindowtitlevisibility?language=objc)                                                                                                  |
+| TitelbalkVerbergen               | Verwijdert [NSWindowStyleMaskTitled](https://developer.apple.com/documentation/appkit/nswindowstylemask/nswindowstylemasktitled/) uit de stijlmasker                                                                                   |
+| VolledigeInhoud            | Laat de webview het hele venster vullen. [Apple Docs](https://developer.apple.com/documentation/appkit/nswindowstylemask/nswindowstylemaskfullsizecontentview)                                                                      |
+| GebruikWerkbalk                 | Voegt een standaard werkbalk toe aan het venster. [Apple Docs](https://developer.apple.com/documentation/appkit/nstoolbar?language=objc)                                                                                                         |
+| WerkbalkScheiderVerbergen       | Verwijdert de lijn onder de werkbalk. [Apple Docs](https://developer.apple.com/documentation/appkit/nstoolbar/1516954-showsbaselineseparator?language=objc)                                                                          |
+
+Voorgeconfigureerde instellingen voor de titelbalk zijn beschikbaar:
+
+| Instelling                     | Voorbeeld                                        |
+| --------------------------- | ---------------------------------------------- |
+| `mac.TitelbalkStandaard()`     | ![](/img/reference/titlebar-default.webp)      |
+| `mac.TitelbalkVerborgen()`      | ![](/img/reference/titlebar-hidden.webp)       |
+| `mac.TitelbalkVerborgenIngevoegd()` | ![](/img/reference/titlebar-hidden-inset.webp) |
+
+Voorbeeld:
+
+```go
+Mac: &mac.Opties{
+	Titelbalk:     mac.TitelbalkVerborgenIngevoegd(),
+}
+```
+
+Klik [hier](https://github.com/lukakerr/NSWindowStyles) voor wat inspiratie om de titelbalk aan te passen.
+
+#### Uiterlijk
+
+Uiterlijk wordt gebruikt om de stijl van uw app in te stellen volgens de namen van Apple's [NSAppearance](https://developer.apple.com/documentation/appkit/nsappearancename?language=objc).
+
+Naam: Uiterlijk<br/>
+Type: [`mac.Uiterlijkstype`](#uiterlijk-type)
+
+##### Type uiterlijk
+
+U kunt het [uiterlijk](https://developer.apple.com/documentation/appkit/nsappearance?language=objc) van de toepassing specificeren.
+
+| Waarde                                                | Beschrijving                                                   |
+| ----------------------------------------------------- | ------------------------------------------------------------- |
+| DefaultAppearance                                     | DefaultAppearance gebruikt de standaard systeemwaarde         |
+| NSAppearanceNameAqua                                  | Het standaard lichte systeemuiterlijk                          |
+| NSAppearanceNameDarkAqua                              | Het standaard donkere systeemuiterlijk                         |
+| NSAppearanceNameVibrantLight                          | Het lichte levendige uiterlijk                                 |
+| NSAppearanceNameAccessibilityHighContrastAqua         | Een hoog-contrastversie van het standaard lichte systeemuiterlijk |
+| NSAppearanceNameAccessibilityHighContrastDarkAqua     | Een hoog-contrastversie van het standaard donkere systeemuiterlijk |
+| NSAppearanceNameAccessibilityHighContrastVibrantLight | Een hoog-contrastversie van het lichte levendige uiterlijk    |
+| NSAppearanceNameAccessibilityHighContrastVibrantDark  | Een hoog-contrastversie van het donkere levendige uiterlijk     |
+
+Voorbeeld:
+
+```go
+Mac: &mac.Options{
+    Appearance: mac.NSAppearanceNameDarkAqua,
+}
+```
+
+#### WebviewIsTransparent
+
+Als u dit instelt op `true`, wordt de achtergrond van de webweergave transparant wanneer een alfa-waarde van `0` wordt gebruikt.
+Dit betekent dat als u `rgba(0,0,0,0)` gebruikt voor `background-color` in uw CSS, het venster van de host zichtbaar zal zijn.
+Vaak gecombineerd met [WindowIsTranslucent](#WindowIsTranslucent) om ijsachtig uitziende toepassingen te maken.
+
+Naam: WebviewIsTransparent<br/>
+Type: `bool`
+
+#### WindowIsTranslucent
+
+Als u dit instelt op `true`, wordt de achtergrond van het venster doorschijnend. Vaak gecombineerd
+met [WebviewIsTransparent](#WebviewIsTransparent) om ijsachtig uitziende toepassingen te maken.
+
+Naam: WindowIsTranslucent<br/>
+Type: `bool`
+
+#### Over
+
+Met deze configuratie kunt u de titel, bericht en pictogram instellen voor het menu-item "Over" in het app-menu dat is gemaakt door de rol "AppMenu".
+
+Naam: Over<br/>
+Type: [`*mac.AboutInfo`](#about-struct)
+
+##### About struct
+
+```go
+
+type AboutInfo struct {
+	Title   string
+	Message string
+	Icon    []byte
+}
+```
+
+Als deze instellingen zijn opgegeven, verschijnt er een menu-item "Over" in het app-menu (bij gebruik van de rol `AppMenu`).
+Gegeven deze configuratie:
+
+```go
+//go:embed build/appicon.png
+var icon []byte
+
+func main() {
+	err := wails.Run(&options.App{
+	    ...
+        Mac: &mac.Options{
+            About: &mac.AboutInfo{
+                Title:   "Mijn toepassing",
+                Message: "© 2021 Ik",
+                Icon:    icon,
+            },
+        },
+    })
+```
+
+Het menu-item "Over" verschijnt in het app-menu:
+
+```mdx-code-block
+<div class="text--center">
+  <img
+    src={require("@site/static/img/reference/about-menu.webp").default}
+    class="screenshot"
+  />
+</div>
+<br />
+```
+
+Als erop wordt geklikt, wordt er een berichtvenster geopend:
+
+```mdx-code-block
+<div class="text--center">
+  <img
+    src={require("@site/static/img/reference/about-dialog.webp").default}
+    width="40%"
+    class="screenshot"
+  />
+</div>
+<br />
+```
+
+### Linux
+
+Dit definieert [Linux-specifieke opties](#linux).
+
+Naam: Linux<br/>
+Type: `*linux.Options`
+
+#### Pictogram
+
+Stelt het pictogram in dat het venster vertegenwoordigt. Dit pictogram wordt gebruikt wanneer het venster wordt geminimaliseerd (ook wel geïconificeerd genoemd).
+
+Naam: Pictogram<br/>
+Type: `[]byte`
+
+Sommige window managers of desktopomgevingen kunnen het ook in de vensterrand plaatsen of het in andere contexten weergeven.
+Op andere systemen wordt het pictogram helemaal niet gebruikt, dus uw ervaring kan variëren.
+
+OPMERKING: Gnome op Wayland toont dit pictogram in ieder geval niet. Om een toepassingspictogram daar te hebben, moet een `.desktop`-bestand worden gebruikt.
+Op KDE zou het moeten werken.
+
+Het pictogram moet worden geleverd in de grootte waarin het oorspronkelijk is getekend; dat wil zeggen, schaal de afbeelding niet voordat je deze doorgeeft.
+Het schalen wordt uitgesteld tot het laatste moment, wanneer de gewenste uiteindelijke grootte bekend is, om de beste kwaliteit te garanderen.
+
+#### VensterIsTransparant
+
+Door dit in te stellen op `true` wordt de achtergrond van het venster transparant. Sommige window managers kunnen dit negeren of resulteren in een zwart venster.
+
+Naam: VensterIsTransparant<br/>
+Type: `bool`
+
+#### WebviewGpuBeleid
+
+Deze optie wordt gebruikt om het hardwareversnellingsbeleid van de webview te bepalen.
+
+Naam: WebviewGpuBeleid<br/>
+Type: [`options.WebviewGpuBeleid`](#webviewgpubeleid-type)<br/>
+Standaard: `WebviewGpuBeleidAltijd`
+
+##### WebviewGpuBeleid type
+
+| Waarde                   | Beschrijving |
+| ------------------------ | ------------ |
+| WebviewGpuBeleidAltijd   | Hardwareversnelling is altijd ingeschakeld |
+| WebviewGpuBeleidOpVerzoek | Hardwareversnelling wordt ingeschakeld/uitgeschakeld op verzoek van webinhoud |
+| WebviewGpuBeleidNooit    | Hardwareversnelling is altijd uitgeschakeld |
+
+### Debug
+
+Dit definieert [Debug-specifieke opties](#Debug) die van toepassing zijn op debugbuilds.
+
+Naam: Debug<br/>
+Type: `options.Debug`
+
+#### OpenInspectorBijOpstarten
+
+Door dit in te stellen op `true` wordt de WebInspector geopend bij het opstarten van de toepassing.
+
+Naam: OpenInspectorBijOpstarten<br/>
+Type: `bool`

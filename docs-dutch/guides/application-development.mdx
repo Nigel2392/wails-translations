@@ -1,0 +1,202 @@
+# Applicatieontwikkeling
+
+Er zijn geen strikte regels voor het ontwikkelen van applicaties met Wails, maar er zijn enkele basisrichtlijnen.
+
+## Applicatieconfiguratie
+
+Het patroon dat wordt gebruikt door de standaardsjablonen is dat `main.go` wordt gebruikt voor het configureren en uitvoeren van de applicatie, terwijl
+`app.go` wordt gebruikt voor het definiëren van de applicatielogica.
+
+Het `app.go`-bestand definieert een structuur die 2 methoden heeft die als hooks dienen in de hoofdapplicatie:
+
+```go title="app.go"
+type App struct {
+	ctx context.Context
+}
+
+func NewApp() *App {
+	return &App{}
+}
+
+func (a *App) startup(ctx context.Context) {
+	a.ctx = ctx
+}
+
+func (a *App) shutdown(ctx context.Context) {
+}
+```
+
+- De startup-methode wordt direct aangeroepen zodra Wails de benodigde resources toewijst en is een goede plek om resources aan te maken,
+  event listeners in te stellen en alles wat de applicatie nodig heeft bij het opstarten. Het krijgt een `context.Context` die meestal wordt opgeslagen in een structuurveld. Deze context is nodig voor het aanroepen van de
+  [runtime](../reference/runtime/intro.mdx). Als deze methode een fout retourneert, wordt de applicatie beëindigd.
+  In de ontwikkelmodus wordt de fout naar de console uitvoer geschreven.
+
+- De shutdown-methode wordt door Wails aangeroepen aan het einde van het afsluitproces. Dit is een goede plek om geheugen vrij te geven
+  en eventuele afsluittaken uit te voeren.
+
+Het `main.go`-bestand bestaat meestal uit een enkele oproep naar `wails.Run()`, die de applicatieconfiguratie accepteert.
+Het patroon dat in de sjablonen wordt gebruikt, is dat vóór de oproep naar `wails.Run()`, een instantie van de structuur die we hebben gedefinieerd in
+`app.go` wordt aangemaakt en opgeslagen in een variabele genaamd `app`. In deze configuratie voegen we onze callbacks toe:
+
+```go {3,9,10} title="main.go"
+func main() {
+
+	app := NewApp()
+
+	err := wails.Run(&options.App{
+		Title:             "Mijn App",
+		Width:             800,
+		Height:            600,
+		OnStartup:  app.startup,
+		OnShutdown: app.shutdown,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+Meer informatie over hooks voor de levenscyclus van de applicatie vindt u [hier](../howdoesitwork.mdx#application-lifecycle-callbacks).
+
+## Methoden binden
+
+Waarschijnlijk wilt u Go-methoden vanuit de frontend aanroepen. Dit gebeurt meestal door openbare methoden toe te voegen aan
+de al gedefinieerde structuur in `app.go`:
+
+```go {16-18} title="app.go"
+type App struct {
+	ctx context.Context
+}
+
+func NewApp() *App {
+	return &App{}
+}
+
+func (a *App) startup(ctx context.Context) {
+	a.ctx = ctx
+}
+
+func (a *App) shutdown(ctx context.Context) {
+}
+
+func (a *App) Greet(name string) string {
+    return fmt.Sprintf("Hallo %s!", name)
+}
+```
+
+In de hoofdconfiguratie van de applicatie is de `Bind`-sleutel waar we Wails kunnen vertellen wat we willen binden:
+
+```go {11-13} title="main.go"
+func main() {
+
+	app := NewApp()
+
+	err := wails.Run(&options.App{
+		Title:             "Mijn App",
+		Width:             800,
+		Height:            600,
+		OnStartup:  app.startup,
+		OnShutdown: app.shutdown,
+        Bind: []interface{}{
+            app,
+        },
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+Dit zal alle openbare methoden in onze `App`-structuur binden (de startup- en shutdown-methoden worden nooit gebonden).
+
+### Omgaan met context bij het binden van meerdere structuren
+
+Als u methoden voor meerdere structuren wilt binden maar elke structuur een referentie naar de context wilt laten behouden zodat u
+de runtime-functies kunt gebruiken, is een goed patroon om de context vanuit de `OnStartup`-methode door te geven aan uw structuurinstanties
+:
+
+```go
+func main() {
+
+	app := NewApp()
+	otherStruct := NewOtherStruct()
+
+	err := wails.Run(&options.App{
+		Title:             "Mijn App",
+		Width:             800,
+		Height:            600,
+		OnStartup:  func(ctx context.Context){
+			app.SetContext(ctx)
+			otherStruct.SetContext(ctx)
+		},
+		OnShutdown: app.shutdown,
+        Bind: []interface{}{
+            app,
+			otherStruct
+        },
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+Meer informatie over binding vindt u [hier](../howdoesitwork.mdx#method-binding).
+
+## Applicatiemenu
+
+Wails ondersteunt het toevoegen van een menu aan uw applicatie. Dit wordt gedaan door een [Menu](../reference/menus.mdx#menu) structuur door te geven
+aan de applicatieconfiguratie. Het is gebruikelijk om een methode te gebruiken die een Menu retourneert, en nog gebruikelijker dat dit een methode is op
+de `App`-structuur die wordt gebruikt voor de levenscyclushooks.
+
+```go {11} title="main.go"
+func main() {
+
+	app := NewApp()
+
+	err := wails.Run(&options.App{
+		Title:             "Mijn App",
+		Width:             800,
+		Height:            600,
+		OnStartup:  app.startup,
+		OnShutdown: app.shutdown,
+		Menu:       app.menu(),
+        Bind: []interface{}{
+            app,
+        },
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+## Middelen
+
+Het geweldige aan de manier waarop Wails v2 middelen behandelt, is dat het dat niet doet! Het enige wat u Wails hoeft te geven is een
+`embed.FS`. Hoe u daar komt, is volledig aan u. U kunt vanille html/css/js-bestanden gebruiken zoals het vanille sjabloon.
+U kunt een ingewikkeld buildsysteem hebben, het maakt niet uit.
+
+Wanneer `wails build` wordt uitgevoerd, wordt het `wails.json`-projectbestand in de projectmap gecontroleerd. Er zijn 2 sleutels in de
+projectbestand dat wordt gelezen:
+
+- "frontend:install"
+- "frontend:build"
+
+De eerste, indien opgegeven, wordt uitgevoerd in de `frontend`-map om de node-modules te installeren.
+De tweede, indien opgegeven, wordt uitgevoerd in de `frontend`-map om het frontendproject te bouwen.
+
+Als deze 2 sleutels niet worden opgegeven, doet Wails helemaal niets met de frontend. Er wordt alleen verwacht dat `embed.FS` aanwezig is.
+
+### AssetsHandler
+
+Een Wails v2-app kan optioneel een `http.Handler` definiëren in de `options.App`, waarmee u kunt aansluiten op de AssetServer om
+bestanden on-the-fly te maken of POST/PUT-verzoeken te verwerken.
+GET-verzoeken worden altijd eerst afgehandeld door de `assets` FS. Als de FS het gevraagde bestand niet vindt, wordt het verzoek doorgestuurd naar de `http.Handler` voor het serveren. Alle verzoeken anders dan GET worden rechtstreeks verwerkt door de `AssetsHandler`
+indien gespecificeerd.
+Het is ook mogelijk om alleen de `AssetsHandler` te gebruiken door `nil` op te geven als de `Assets`-optie.
+
+## Ingebouwde Dev Server
+
+Met `wails dev` wordt de ingebouwde dev server gestart, die een bestandswatcher start in uw projectdirectory. Standaard controleert Wails bij
+elke wijziging van een

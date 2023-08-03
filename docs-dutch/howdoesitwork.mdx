@@ -1,0 +1,367 @@
+# Hoe werkt het?
+
+Een Wails-toepassing is een standaard Go-toepassing met een webkit-front-end. Het Go-deel van de toepassing bestaat uit de toepassingscode en een runtime-bibliotheek die een aantal handige bewerkingen biedt, zoals het beheren van het toepassingsvenster. De front-end is een webkit-venster dat de front-end-assets weergeeft. Ook beschikbaar voor de front-end is een JavaScript-versie van de runtime-bibliotheek. Ten slotte is het mogelijk om Go-methoden aan de front-end te binden, en deze zullen verschijnen als JavaScript-methoden die kunnen worden aangeroepen, net alsof ze lokale JavaScript-methoden waren.
+
+```mdx-code-block
+<div className="text--center">
+  <img src={require("@site/static/img/architecture.webp").default} style={{"width":"75%", "max-width":"800px"}} />
+</div>
+```
+
+## De hoofdtoepassing
+
+### Overzicht
+
+De hoofdtoepassing bestaat uit een enkele oproep naar `wails.Run()`. Het accepteert de toepassingsconfiguratie die de grootte van het toepassingsvenster, de venstertitel, welke assets te gebruiken, enz. beschrijft. Een eenvoudige toepassing zou er als volgt uit kunnen zien:```go title="main.go"
+package main
+
+import (
+	"embed"
+	"log"
+	"context"
+	"fmt"
+
+	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/options"
+	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+)
+
+//go:embed all:frontend/dist
+var assets embed.FS
+
+func main() {
+
+	app := &App{}
+
+	err := wails.Run(&options.App{
+		Title:  "Basic Demo",
+		Width:  1024,
+		Height: 768,
+		AssetServer: &assetserver.Options{
+			Assets: assets,
+		},
+		OnStartup:  app.startup,
+		OnShutdown: app.shutdown,
+		Bind: []interface{}{
+			app,
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+
+type App struct {
+    ctx context.Context
+}
+
+func (b *App) startup(ctx context.Context) {
+    b.ctx = ctx
+}
+
+func (b *App) shutdown(ctx context.Context) {}
+
+func (b *App) Greet(name string) string {
+    return fmt.Sprintf("Hallo %s!", name)
+}
+```### Overzicht van opties
+
+Dit voorbeeld heeft de volgende opties ingesteld:
+
+- `Title` - De tekst die moet verschijnen in de titelbalk van het venster
+- `Width` & `Height` - De afmetingen van het venster
+- `Assets` - De frontend-assets van de applicatie
+- `OnStartup` - Een callback voor wanneer het venster wordt gemaakt en begint met het laden van de frontend-assets
+- `OnShutdown` - Een callback voor wanneer de applicatie wordt afgesloten
+- `Bind` - Een reeks instanties van structuren die we aan de frontend willen blootstellen
+
+Een volledige lijst van applicatie-opties is te vinden in de [Options Reference](reference/options).
+
+#### Assets
+
+De `Assets`-optie is verplicht omdat je geen Wails-applicatie kunt hebben zonder frontend-assets. Deze assets kunnen
+alle bestanden zijn die je zou verwachten te vinden in een webapplicatie - html, js, css, svg, png, enz. **Er is geen vereiste om
+assetbundels te genereren** - gewone bestanden volstaan. Wanneer de applicatie start, zal deze proberen `index.html` te laden
+vanuit je assets en de frontend zal vanaf dat moment in feite werken als een browser. Het is de moeite waard om op te merken dat
+er geen vereiste is voor de locatie van de bestanden in `embed.FS`. Waarschijnlijk gebruikt het insluitingspad een geneste
+directory die relatief is aan je hoofdapplicatiecode, zoals `frontend/dist`:
+
+```go title="main.go"
+//go:embed all:frontend/dist
+var assets embed.FS
+```
+
+Bij het opstarten zal Wails de ingesloten bestanden doorlopen op zoek naar de directory die `index.html` bevat. Alle andere assets worden relatief geladen
+aan deze directory.
+
+Omdat productie-binaries de bestanden in `embed.FS` gebruiken, zijn er geen externe bestanden nodig om met de
+applicatie te worden meegeleverd.
+
+Bij het uitvoeren in de ontwikkelingsmodus met behulp van het `wails dev`-commando worden de assets vanaf de schijf geladen en resulteren eventuele wijzigingen
+in een "live reload". De locatie van de assets wordt afgeleid uit de `embed.FS`.
+
+Meer details zijn te vinden in de [Application Development Guide](guides/application-development.mdx).#### Levenscyclus-callbacks van de applicatie
+
+Net voordat de frontend `index.html` laadt, wordt er een callback gemaakt naar de functie die wordt geleverd in [OnStartup](reference/options.mdx#onstartup).
+Er wordt een standaard Go-context doorgegeven aan deze methode. Deze context is vereist bij het aanroepen van de runtime, dus een standaardpatroon is om een referentie hiervan op te slaan
+in deze methode. Net voordat de applicatie wordt afgesloten, wordt de [OnShutdown](reference/options.mdx#onshutdown) callback op dezelfde manier aangeroepen,
+opnieuw met de context. Er is ook een [OnDomReady](reference/options.mdx#ondomready) callback voor wanneer de frontend
+klaar is met het laden van alle assets in `index.html` en is equivalent aan het [`body onload`](https://www.w3schools.com/jsref/event_onload.asp)-evenement in JavaScript.
+Het is ook mogelijk om in te haken op het sluiten van het venster (of het afsluiten van de applicatie) door de
+optie [OnBeforeClose](reference/options.mdx#onbeforeclose) in te stellen.
+
+#### Methodebinding
+
+De `Bind`-optie is een van de belangrijkste opties in een Wails-applicatie. Het geeft aan welke struct-methoden
+zichtbaar moeten zijn voor de frontend. Denk aan structs als "controllers" in een traditionele webtoepassing. Wanneer de applicatie
+start, onderzoekt het de struct-instanties die zijn vermeld in het `Bind`-veld in de opties, bepaalt welke methoden
+openbaar zijn (beginnen met een hoofdletter) en genereert JavaScript-versies van die methoden die kunnen worden aangeroepen
+door de frontend-code.
+
+:::info Opmerking
+
+Wails vereist dat je een _instantie_ van de struct doorgeeft om deze correct te binden.
+
+:::In dit voorbeeld maken we een nieuwe `App`-instantie aan en voegen we deze instantie toe aan de `Bind`-optie in `wails.Run`:
+
+```go {17,27} title="main.go"
+package main
+
+import (
+	"embed"
+	"log"
+
+	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/options"
+  "github.com/wailsapp/wails/v2/pkg/options/assetserver"
+)
+
+//go:embed all:frontend/dist
+var assets embed.FS
+
+func main() {
+
+	app := &App{}
+
+	err := wails.Run(&options.App{
+		Title:  "Basic Demo",
+		Width:  1024,
+		Height: 768,
+		AssetServer: &assetserver.Options{
+			Assets: assets,
+		},
+		Bind: []interface{}{
+			app,
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```type App struct {
+    ctx context.Context
+}
+
+func (a *App) Greet(name string) string {
+    return fmt.Sprintf("Hallo %s!", name)
+}
+
+Je kunt zoveel structs binden als je wilt. Zorg er gewoon voor dat je er een instantie van maakt en deze doorgeeft aan `Bind`:
+
+```go {10-12}
+    //...
+	err := wails.Run(&options.App{
+		Title:  "Basic Demo",
+		Width:  1024,
+		Height: 768,
+		AssetServer: &assetserver.Options{
+			Assets: assets,
+		},
+		Bind: []interface{}{
+			app,
+			&mystruct1{},
+			&mystruct2{},
+		},
+	})
+
+```Wanneer je `wails dev` uitvoert (of `wails generate module`), wordt er een frontend module gegenereerd met het volgende:
+
+- JavaScript bindings voor alle gebonden methoden
+- TypeScript declaraties voor alle gebonden methoden
+- TypeScript definities voor alle Go structs die worden gebruikt als invoer of uitvoer door de gebonden methoden
+
+Dit maakt het ongelooflijk eenvoudig om Go-code aan te roepen vanuit de frontend, met behulp van dezelfde sterk getypeerde datastructuren.
+
+## De Frontend
+
+### Overzicht
+
+De frontend is een verzameling bestanden die worden weergegeven door webkit. Het is als een browser en webserver in één.
+Er is praktisch gezien geen limiet aan welke frameworks of bibliotheken je kunt gebruiken. De belangrijkste interactiepunten tussen
+de frontend en je Go-code zijn:
+
+- Het aanroepen van gebonden Go-methoden
+- Het aanroepen van runtime-methoden
+
+[^1]:
+    Er is een zeer kleine subset van bibliotheken die functies gebruiken die niet worden ondersteund in WebViews. Er zijn vaak alternatieven en
+    oplossingen voor dergelijke gevallen.### Roep gebonden Go-methoden aan
+
+Wanneer u uw toepassing uitvoert met `wails dev`, genereert het automatisch JavaScript-bindings voor uw structs in een map genaamd `wailsjs/go` (U kunt dit ook doen door `wails generate module` uit te voeren). De gegenereerde bestanden zijn een spiegel van de pakketnamen in uw toepassing. In het bovenstaande voorbeeld binden we `app`, dat één openbare methode `Greet` heeft. Dit leidt tot de generatie van de volgende bestanden:
+
+```bash
+wailsjs
+  └─go
+    └─main
+      ├─App.d.ts
+      └─App.js
+```
+
+Hier kunnen we zien dat er een `main` pakket is dat de JavaScript-bindings bevat voor de gebonden `App` struct, evenals het TypeScript-declaratiebestand voor die methoden. Om `Greet` vanuit onze frontend aan te roepen, importeren we eenvoudig de methode en roepen deze aan als een gewone JavaScript-functie:
+
+```javascript
+// ...
+import { Greet } from "../wailsjs/go/main/App";
+
+function doGreeting(name) {
+  Greet(name).then((result) => {
+    // Doe iets met het resultaat
+  });
+}
+```
+
+Het TypeScript-declaratiebestand geeft u de juiste types voor de gebonden methoden:
+
+```ts
+export function Greet(arg1: string): Promise<string>;
+```De gegenereerde methoden retourneren een Promise. Een succesvolle oproep resulteert in de eerste retourwaarde van de Go-oproep die wordt doorgegeven aan de `resolve`-handler. Een onsuccesvolle oproep is wanneer een Go-methode die een fouttype heeft als tweede retourwaarde een foutinstantie teruggeeft aan de beller. Dit wordt doorgegeven via de `reject`-handler.
+In het bovenstaande voorbeeld retourneert `Greet` alleen een `string`, dus de JavaScript-oproep zal nooit worden afgewezen - tenzij er ongeldige gegevens aan worden doorgegeven.
+
+Alle gegevenstypen worden correct vertaald tussen Go en JavaScript, zelfs structs. Als je een struct retourneert vanuit een Go-oproep, wordt deze als een JavaScript-klasse naar je frontend gestuurd.
+
+:::info Let op
+
+Struct-velden moeten een geldig `json`-label hebben om te worden opgenomen in de gegenereerde TypeScript.
+
+Anonieme geneste structs worden op dit moment niet ondersteund.
+
+:::
+
+Het is mogelijk om structs terug te sturen naar Go. Elke JavaScript-map/klasse die als argument wordt doorgegeven en die een struct verwacht, wordt omgezet naar dat structtype. Om dit proces veel eenvoudiger te maken, wordt er in `dev`-modus een TypeScript-module gegenereerd die alle gebruikte structtypes in de gebonden methoden definieert. Met behulp van deze module is het mogelijk om native JavaScript-objecten te construeren en naar de Go-code te sturen.
+
+Er is ook ondersteuning voor Go-methoden die structs gebruiken in hun signatuur. Alle Go-structs die worden gespecificeerd door een gebonden methode (zowel als parameters als retourtypen) krijgen automatisch TypeScript-versies gegenereerd als onderdeel van de Go-code wrapper-module. Met behulp hiervan is het mogelijk om hetzelfde datamodel te delen tussen Go en JavaScript.Voorbeeld: We updaten onze `Greet` methode om een `Person` te accepteren in plaats van een string:
+
+```go title="main.go"
+type Person struct {
+	Name string `json:"name"`
+	Age uint8 `json:"age"`
+	Address *Address `json:"address"`
+}
+
+type Address struct {
+	Street string `json:"street"`
+	Postcode string `json:"postcode"`
+}
+
+func (a *App) Greet(p Person) string {
+	return fmt.Sprintf("Hallo %s (Leeftijd: %d)!", p.Name, p.Age)
+}
+```
+
+Het `wailsjs/go/main/App.js` bestand zal nog steeds de volgende code bevatten:
+
+```js title="App.js"
+export function Greet(arg1) {
+  return window["go"]["main"]["App"]["Greet"](arg1);
+}
+```
+
+Maar het `wailsjs/go/main/App.d.ts` bestand zal worden bijgewerkt met de volgende code:
+
+```ts title="App.d.ts"
+import { main } from "../models";
+
+export function Greet(arg1: main.Person): Promise<string>;
+```Zoals we kunnen zien, wordt de "main" namespace geïmporteerd vanuit een nieuw bestand genaamd "models.ts". Dit bestand bevat alle structuurdefinities die worden gebruikt door onze gekoppelde methoden. In dit voorbeeld is dit een `Person` structuur. Als we naar `models.ts` kijken, kunnen we zien hoe de modellen worden gedefinieerd:
+
+```ts title="models.ts"
+export namespace main {
+  export class Address {
+    street: string;
+    postcode: string;
+
+    static createFrom(source: any = {}) {
+      return new Address(source);
+    }
+
+    constructor(source: any = {}) {
+      if ("string" === typeof source) source = JSON.parse(source);
+      this.street = source["street"];
+      this.postcode = source["postcode"];
+    }
+  }
+  export class Person {
+    name: string;
+    age: number;
+    address?: Address;
+
+    static createFrom(source: any = {}) {
+      return new Person(source);
+    }
+
+    constructor(source: any = {}) {
+      if ("string" === typeof source) source = JSON.parse(source);
+      this.name = source["name"];
+      this.age = source["age"];
+      this.address = this.convertValues(source["address"], Address);
+    }
+
+    convertValues(a: any, classs: any, asMap: boolean = false): any {
+      if (!a) {
+        return a;
+      }
+      if (a.slice) {
+        return (a as any[]).map((elem) => this.convertValues(elem, classs));
+      } else if ("object" === typeof a) {
+        if (asMap) {
+          for (const key of Object.keys(a)) {
+            a[key] = new classs(a[key]);
+          }
+          return a;
+        }
+        return new classs(a);
+      }
+      return a;
+    }
+  }
+}
+```Zolang TypeScript deel uitmaakt van uw frontend build-configuratie, kunt u deze modellen op de volgende manier gebruiken:
+
+```js title="mycode.js"
+import { Greet } from "../wailsjs/go/main/App";
+import { main } from "../wailsjs/go/models";
+
+function generate() {
+  let person = new main.Person();
+  person.name = "Peter";
+  person.age = 27;
+  Greet(person).then((result) => {
+    console.log(result);
+  });
+}
+```De combinatie van gegenereerde bindings en TypeScript-modellen zorgt voor een krachtige ontwikkelomgeving.
+
+Meer informatie over Binding is te vinden in de sectie [Binding-methoden](guides/application-development.mdx#binding-methoden)
+van de [Application Development Guide](guides/application-development.mdx).
+
+### Aanroepen van runtime-methoden
+
+De JavaScript-runtime bevindt zich op `window.runtime` en bevat veel methoden om verschillende taken uit te voeren,
+zoals het uitstralen van een gebeurtenis of het uitvoeren van logboekbewerkingen:
+
+```js title="mycode.js"
+window.runtime.EventsEmit("my-event", 1);
+```
+
+Meer details over de JS-runtime zijn te vinden in de [Runtime Reference](reference/runtime/intro).

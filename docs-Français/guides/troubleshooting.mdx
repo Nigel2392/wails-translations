@@ -1,0 +1,174 @@
+# Dépannage
+
+Un assortiment de conseils de dépannage.
+
+## La commande `wails` semble manquante?
+
+Si votre système signale que la commande `wails` est manquante, assurez-vous d'avoir suivi correctement le guide d'installation de Go. Normalement, cela signifie que le répertoire `go/bin` dans le répertoire personnel de votre utilisateur n'est pas dans la variable d'environnement `PATH`. Vous devrez également normalement fermer et rouvrir toutes les fenêtres de commandes ouvertes afin que les modifications de l'environnement effectuées par l'installateur soient reflétées dans l'invite de commandes.
+
+## Mon application affiche un écran blanc/vide
+
+Vérifiez que votre application inclut les ressources du répertoire correct. Dans votre fichier `main.go`, vous aurez quelque chose de similaire au code suivant:
+
+```go
+//go:embed all:frontend/dist
+var assets embed.FS
+```
+
+Vérifiez que `frontend/dist` contient les ressources de votre application.
+
+### Mac
+
+Si cela se produit sur Mac, essayez d'ajouter ce qui suit à votre fichier `Info.plist`:
+
+```xml
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsLocalNetworking</key>
+    <true/>
+</dict>
+```
+
+Référence: https://github.com/wailsapp/wails/issues/1504#issuecomment-1174317433
+
+## Application Mac non valide
+
+Si votre application construite ressemble à ceci dans Finder:
+
+```mdx-code-block
+<p className="text--center">
+  <img
+    src={require("@site/static/img/troubleshooting/invalid_mac_app.png").default}
+  />
+</p>
+```
+
+il est probable que le fichier `info.plist` de votre application soit invalide. Mettez à jour le fichier dans `build/<votreapp>.app/Contents/info.plist`
+et vérifiez si les données sont valides, par exemple vérifiez si le nom du binaire est correct. Pour enregistrer les modifications, copiez le fichier dans
+le répertoire `build/darwin`.
+
+## Mon application n'affiche pas l'icône correcte dans l'Explorateur Windows
+
+Si votre application n'affiche pas l'icône correcte, essayez de supprimer le fichier caché `IconCache.db` situé dans le répertoire
+`C:\Users\<votre nom d'utilisateur>\AppData\Local`. Cela forcera Windows à reconstruire le cache des icônes.
+
+Source: https://github.com/wailsapp/wails/issues/2360#issuecomment-1556070036
+
+## Impossible d'appeler une méthode backend depuis le frontend avec des arguments variadiques
+
+Si vous avez une méthode backend définie avec des paramètres variadiques, par exemple:
+
+```go
+func (a *App) TestFunc(msg string, args ...interface{}) error {
+    // Code
+}
+```
+
+Appeler cette méthode depuis le frontend de cette manière échouera :
+
+```js
+var msg = "Bonjour : ";
+var args = ["Go", "JS"];
+window.go.main.App.TestFunc(msg, ...args)
+  .then((result) => {
+    //faire des choses ici
+  })
+  .catch((error) => {
+    //gérer l'erreur
+  });
+```
+
+Solution de contournement :
+
+```js
+var msg = "Bonjour ";
+var args = ["Go", "JS"];
+window.go.main.App.TestFunc(msg, args)
+  .then((result) => {
+    //sans les 3 points
+    //faire des choses ici
+  })
+  .catch((error) => {
+    //gérer l'erreur
+  });
+```
+
+## J'ai des erreurs de proxy lorsque j'essaie d'installer Wails
+
+Si vous obtenez des erreurs comme celle-ci:
+
+```
+"https://proxy.golang.org/github.com/wailsapp/wails/cmd/wails/@v/list": dial tcp 172.217.163.49:443: connectex: une tentative de connexion a échoué car la partie connectée n'a pas répondu correctement après un certain laps de temps, ou la connexion établie a échoué car l'hôte connecté a échoué pour répondre.
+```
+
+Cela est probablement dû au blocage du proxy Go officiel (des utilisateurs en Chine ont signalé cela).
+La solution consiste à configurer manuellement le proxy, par exemple:
+
+```
+go env -w GO111MODULE=on
+go env -w GOPROXY=https://goproxy.cn,direct
+```
+
+Source: https://github.com/wailsapp/wails/issues/1233
+
+## Le TypeScript généré n'a pas les bons types
+
+Parfois, le TypeScript généré n'a pas les bons types. Pour atténuer cela,
+il est possible de spécifier quels types doivent être générés en utilisant la balise de structure `ts_type`. Pour
+plus de détails, veuillez lire [ceci](https://github.com/tkrajina/typescriptify-golang-structs#custom-types).
+
+Lorsque je quitte `index.html`, je ne peux pas appeler de méthodes côté frontend.
+
+Si vous quittez `index.html` pour un nouveau fichier html, le contexte sera perdu. Cela peut être résolu en ajoutant les imports suivants à la section `<head>` de chaque nouvelle page vers laquelle vous naviguez :
+
+```html
+<head>
+  <script src="/wails/ipc.js"></script>
+  <script src="/wails/runtime.js"></script>
+</head>
+```
+
+Source : https://github.com/wailsapp/wails/discussions/1512
+
+Je reçois des erreurs `too many open files` sur mon Mac lorsque j'exécute `wails dev`.
+
+Par défaut, macOS vous permet d'ouvrir un maximum de 256 fichiers. Cela peut affecter la commande `wails dev`. Cette limite peut être augmentée en exécutant : `ulimit -n 1024` dans le terminal.
+
+FSNotify envisage de passer à fsevents d'Apple pour Mac. Si cela n'est pas fait bientôt, nous créerons notre propre implémentation, suivie [ici](https://github.com/wailsapp/wails/issues/1733).
+
+Mon application Mac me donne des erreurs de compilation étranges.
+
+Certains utilisateurs ont signalé des erreurs de compilation telles que celle-ci :
+
+```shell
+# github.com/wailsapp/wails/v2/internal/frontend/desktop/darwin
+Dans le fichier inclus depuis ../../pkg/mod/github.com/wailsapp/wails/v2@v2.0.0-beta.44.2/internal/frontend/desktop/darwin/callbacks.go:9 :
+Dans le fichier inclus depuis /Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h:12 :
+/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSBundle.h:91:143: erreur : la fonction ne renvoie pas NSString
+- (NSAttributedString *)localizedAttributedStringForKey:(NSString *)key value:(nullable NSString *)value table:(nullable NSString *)tableName NS_FORMAT_ARGUMENT(1) NS_REFINED_FOR_SWIFT API_AVAILABLE(macos(12.0), ios(15.0), watchos(8.0), tvos(15.0));
+                                                         ~~~~~~~~~~~~~~                                                                       ^                  ~
+/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSObjCRuntime.h:103:48: note: expansion du macro 'NS_FORMAT_ARGUMENT'
+        #define NS_FORMAT_ARGUMENT(A) __attribute__ ((format_arg(A)))
+```
+
+Cela est généralement dû à une incompatibilité entre la version du système d'exploitation que vous utilisez et la version des outils de ligne de commande XCode installés. Si vous rencontrez une erreur de ce type, essayez de mettre à jour vos outils de ligne de commande XCode vers la dernière version.
+
+Si la réinstallation des outils de ligne de commande Xcode échoue toujours, vous pouvez vérifier le chemin où se trouve la trousse d'outils en utilisant :
+
+`xcode-select -p`
+
+Si `/Applications/Xcode.app/Contents/Developer` s'affiche, exécutez `sudo xcode-select --switch /Library/Developer/CommandLineTools`
+
+Sources : https://github.com/wailsapp/wails/issues/1806 et https://github.com/wailsapp/wails/issues/1140#issuecomment-1290446496
+
+--
+
+## Impossible de démarrer le service : la version de l'hôte "x.x.x ne correspond pas à la version binaire "x.x.x"
+
+Il est préférable d'ajouter `frontend/node_modules` et `frontend/package-lock.json` à votre fichier `.gitignore`. Sinon, lorsque vous ouvrez votre dépôt sur une autre machine qui peut avoir des versions différentes de Node installées, vous ne pourrez peut-être pas exécuter votre application.
+
+Si cela se produit, supprimez simplement `frontend/node_modules` et `frontend/package-lock.json` et exécutez à nouveau la commande `wails build` ou `wails dev`.
+
+## Le processus de construction est bloqué sur "Génération de liaisons"
+
+Le processus de génération des liaisons exécute votre application dans un mode spécial. Si votre application, intentionnellement ou non, contient une boucle infinie (c'est-à-dire qu'elle ne se termine pas après l'exécution de `wails.Run()`), cela peut entraîner un blocage du processus de construction à l'étape de génération des liaisons. Assurez-vous que votre code se termine correctement.

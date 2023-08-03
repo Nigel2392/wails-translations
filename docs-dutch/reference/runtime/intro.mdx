@@ -1,0 +1,91 @@
+# Inleiding
+
+De runtime is een bibliotheek die hulpprogramma-methoden biedt voor uw toepassing. Er is zowel een Go- als JavaScript-runtime
+en het streven is om ze zo veel mogelijk gelijk te houden.
+
+Het heeft hulpprogramma-methoden voor:
+
+- [Window](window.mdx)
+- [Menu](menu.mdx)
+- [Dialog](dialog.mdx)
+- [Events](events.mdx)
+- [Browser](browser.mdx)
+- [Log](log.mdx)
+- [Clipboard](clipboard.mdx)
+
+De Go Runtime is beschikbaar door `github.com/wailsapp/wails/v2/pkg/runtime` te importeren. Alle methoden in deze pakket
+nemen een context als eerste parameter. Deze context moet worden verkregen uit de [OnStartup](../options.mdx#onstartup)
+of [OnDomReady](../options.mdx#ondomready) hooks.
+
+:::info Opmerking
+
+Hoewel de context zal worden verstrekt aan de
+[OnStartup](../options.mdx#onstartup) methode, is er geen garantie dat de runtime zal werken in deze methode, omdat
+het venster wordt geïnitialiseerd in een ander thread. Als
+u runtime-methoden wilt aanroepen bij het opstarten, gebruik dan [OnDomReady](../options.mdx#ondomready).
+
+:::
+
+De JavaScript-bibliotheek is beschikbaar voor de frontend via de `window.runtime`-map. Er wordt een runtime-pakket gegenereerd bij gebruik van de `dev`-modus dat TypeScript-verklaringen biedt voor de runtime. Dit moet zich bevinden in de `wailsjs`-map in jouw frontend-map.
+
+### Verbergen
+
+Go: `Verbergen(ctx context.Context)`<br/>
+JS: `Verbergen()`
+
+Verbergt de applicatie.
+
+:::info Opmerking
+
+Op Mac wordt de applicatie op dezelfde manier verborgen als het menu-item 'Verbergen' in standaard Mac-toepassingen. Dit is anders dan het verbergen van het venster, maar de applicatie blijft wel op de voorgrond staan. Voor Windows en Linux is dit momenteel hetzelfde als `WindowVerbergen`.
+
+:::
+
+### Weergeven
+
+Toont de applicatie.
+
+:::info Opmerking
+
+Op Mac wordt de applicatie weer naar de voorgrond gebracht. Voor Windows en Linux is dit momenteel hetzelfde als `WindowWeergeven`.
+
+:::
+
+Go: `Weergeven(ctx context.Context)`<br/>
+JS: `Weergeven()`
+
+### Afsluiten
+
+Sluit de applicatie af.
+
+Go: `Afsluiten(ctx context.Context)`<br/>
+JS: `Afsluiten()`
+
+### Omgeving
+
+Geeft details van de huidige omgeving.
+
+Go: `Omgeving(ctx context.Context) EnvironmentInfo`<br/>
+JS: `Omgeving(): Promise<EnvironmentInfo>`
+
+#### EnvironmentInfo
+
+Go:
+
+```go
+type EnvironmentInfo struct {
+	BuildType string
+	Platform  string
+	Arch      string
+}
+```
+
+JS:
+
+```ts
+interface EnvironmentInfo {
+  buildType: string;
+  platform: string;
+  arch: string;
+}
+```

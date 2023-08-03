@@ -1,0 +1,82 @@
+# Visual Studio Code
+
+本页面是关于在使用 Visual Studio Code 与 Wails 时的杂项技巧和窍门。
+
+## Vetur 配置
+
+非常感谢 [@Lyimmi](https://github.com/Lyimmi) 提供的这个技巧。最初发布在
+[这里](https://github.com/wailsapp/wails/issues/1791#issuecomment-1228158349)。
+
+Vetur 是 Visual Studio Code 的一个流行插件，为 Vue 项目提供语法高亮和代码补全功能。在 VSCode 中加载 Wails 项目时，Vetur 会抛出错误，因为它期望在根目录中找到前端项目。解决方法如下：
+
+在项目的根目录下创建一个名为 `vetur.config.js` 的文件。
+
+```javascript
+// vetur.config.js
+/** @type {import('vls').VeturConfig} */
+module.exports = {
+    // **可选** 默认: `{}`
+    // 重写 vscode 设置
+    // 注意: 它只影响 Vetur 使用的设置。
+    settings: {
+        "vetur.useWorkspaceDependencies": true,
+        "vetur.experimental.templateInterpolationService": true
+    },
+    // **可选** 默认: `[{ root: './' }]`
+    // 支持 monorepos
+    projects: [
+        {
+            // **必填**
+            // 你的项目在哪里？
+            // 相对于 `vetur.config.js`。
+            // root: './packages/repo1',
+            root: './frontend',
+            // **可选** 默认: `'package.json'`
+            // 项目中的 `package.json` 在哪里？
+            // 我们用它来确定 vue 的版本。
+            // 相对于 root 属性。
+            package: './package.json',
+            // **可选**
+            // 项目中的 TypeScript 配置文件在哪里？
+            // 相对于 root 属性。
+            tsconfig: './tsconfig.json',
+            // **可选** 默认: `'./.vscode/vetur/snippets'`
+            // vetur 自定义代码片段文件夹在哪里？
+            snippetFolder: './.vscode/vetur/snippets',
+            // **可选** 默认: `[]`
+            // 全局注册的 Vue 组件 glob。
+            // 如果设置了，你可以通过这些组件来获得补全。
+            // 相对于 root 属性。
+            // 注意: 它并不会真正做这个。你需要使用 `require.context` 或 `Vue.component`
+            globalComponents: [
+                './src/components/**/*.vue'
+            ]
+        }
+    ]
+}
+```
+
+接下来，配置`frontend/tsconfig.json`：
+
+```javascript
+{
+  "compilerOptions": {
+    "module": "system",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "outFile": "../../built/local/tsc.js",
+    "allowJs": true
+  },
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ],
+  "include": [
+    "src/**/*",
+    "wailsjs/**/*.ts"
+  ]
+}
+```
+这样应该能使您按预期使用Vetur。

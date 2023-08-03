@@ -1,0 +1,85 @@
+# 安装
+
+## 支持的平台
+
+- Windows 10/11 AMD64/ARM64
+- MacOS 10.13+ AMD64
+- MacOS 11.0+ ARM64
+- Linux AMD64/ARM64
+
+## 依赖项
+
+在安装之前，Wails有一些常见的依赖项需要安装：
+
+- Go 1.18+
+- NPM (Node 15+)
+
+### Go
+
+从[Go下载页面](https://go.dev/dl/)下载Go。
+
+确保按照官方的[Go安装说明](https://go.dev/doc/install)进行操作。还需要确保您的`PATH`环境变量中包含您的`~/go/bin`目录的路径。重新启动终端并进行以下检查：
+
+- 检查Go是否正确安装：`go version`
+- 检查`"~/go/bin"`是否在您的PATH变量中：`echo $PATH | grep go/bin`
+
+### NPM
+
+从[Node下载页面](https://nodejs.org/en/download/)下载NPM。最好使用最新版本，因为我们通常会进行测试。
+
+运行`npm --version`进行验证。
+
+## 特定平台的依赖项
+
+您还需要安装特定于平台的依赖项：
+
+```mdx-code-block
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+<Tabs
+  defaultValue="Windows"
+  values={[
+    { label: "Windows", value: "Windows" },
+    { label: "MacOS", value: "MacOS" },
+    { label: "Linux", value: "Linux" },
+  ]}
+>
+  <TabItem value="MacOS">
+    Wails要求安装xcode命令行工具。可以通过运行<code>xcode-select --install</code>来完成。
+  </TabItem>
+  <TabItem value="Windows">
+    Wails要求安装<a href="https://developer.microsoft.com/en-us/microsoft-edge/webview2/">WebView2</a>运行时。某些Windows安装可能已经安装了此运行时。您可以使用<code>wails doctor</code>命令进行检查。
+  </TabItem>
+  <TabItem value={"Linux"}>
+    Linux需要标准的<code>gcc</code>构建工具以及<code>libgtk3</code>和<code>libwebkit</code>。与其为不同的发行版列出大量命令，不如让Wails尝试确定您特定发行版的安装命令。安装完成后运行<code>wails doctor</code>以显示如何安装依赖项。如果您的发行版/软件包管理器不受支持，请参阅<a href={"/docs/guides/linux-distro-support"}>添加Linux发行版</a>指南。
+  </TabItem>
+</Tabs>
+```
+
+## 可选的依赖项
+
+- [UPX](https://upx.github.io/)用于压缩应用程序。
+- [NSIS](https://wails.io/docs/guides/windows-installer/)用于生成Windows安装程序。
+
+## 安装Wails
+
+运行`go install github.com/wailsapp/wails/v2/cmd/wails@latest`以安装Wails CLI。
+
+注意：如果您遇到类似以下错误的问题：
+
+```shell
+....\Go\pkg\mod\github.com\wailsapp\wails\v2@v2.1.0\pkg\templates\templates.go:28:12: pattern all:ides/*: no matching files found
+```
+请检查是否已安装Go 1.18+：
+```shell
+go version
+```
+
+## 系统检查
+
+运行`wails doctor`将检查您是否安装了正确的依赖项。如果没有安装，它将提示缺少什么并帮助纠正任何问题。
+
+## “wails”命令似乎丢失了？
+
+如果您的系统报告缺少“wails”命令，请确保按照Go安装指南的说明进行操作。通常意味着您用户主目录中的`go/bin`目录不在`PATH`环境变量中。您通常还需要关闭并重新打开任何打开的命令提示符，以便在命令提示符中反映出安装程序所做的环境更改。

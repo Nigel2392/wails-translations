@@ -1,0 +1,27 @@
+# 鼠标按钮
+
+Wails运行时拦截鼠标点击事件，以确定无框窗口是否需要调整大小或窗口是否需要移动。
+有人询问如何检测鼠标点击是否发生，因为`window.onclick`不能正确报告鼠标按钮。
+以下代码展示了如何检测鼠标点击事件：
+
+```javascript
+window.addEventListener("mousedown", handleMouseButtonDown);
+
+function handleMouseButtonDown(event) {
+  if (event.button === 0) {
+    // 左键
+  } else if (event.button === 1) {
+    // 中键
+  } else if (event.button === 2) {
+    // 右键
+  } else if (event.button === 3) {
+    // 后退键
+  } else if (event.button === 4) {
+    // 前进键
+  } else {
+    // 其他鼠标按钮
+  }
+}
+```
+
+参考：https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button

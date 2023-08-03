@@ -1,0 +1,19 @@
+# Linux
+
+Cette page contient des guides divers liés au développement d'applications Wails pour Linux.
+
+## L'événement "ended" ne se déclenche pas pour la balise vidéo
+
+Lors de l'utilisation d'une balise vidéo, l'événement "ended" ne se déclenche pas lorsque la vidéo a fini de jouer. Cela est dû à un bogue dans WebkitGTK, cependant vous pouvez utiliser le contournement suivant pour le résoudre :
+
+```js
+videoTag.addEventListener("timeupdate", (event) => {
+  if (event.target.duration - event.target.currentTime < 0.2) {
+    let ended = new Event("ended");
+    event.target.dispatchEvent(ended);
+  }
+});
+```
+
+Source: [Lyimmi](https://github.com/Lyimmi) sur le
+[forum de discussions](https://github.com/wailsapp/wails/issues/1729#issuecomment-1212291275)

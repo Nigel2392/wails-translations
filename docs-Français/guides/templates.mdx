@@ -1,0 +1,97 @@
+# Modèles
+
+Wails génère des projets à partir de modèles pré-créés. Dans la version 1, il s'agissait d'un ensemble de projets difficile à maintenir qui risquaient de devenir obsolètes. Dans la version 2, pour donner du pouvoir à la communauté, quelques nouvelles fonctionnalités ont été ajoutées pour les modèles :
+
+- Capacité à générer des projets à partir de [modèles distants](../reference/cli.mdx#remote-templates)
+- Outils pour vous aider à créer vos propres modèles
+
+## Création de modèles
+
+Pour créer un modèle, vous pouvez utiliser la commande `wails generate template`. Pour générer un modèle par défaut, exécutez la commande suivante :
+
+`wails generate template -name mytemplate `
+
+Cela crée le répertoire "mytemplate" avec les fichiers par défaut :
+
+```shell title=mytemplate/
+.
+|-- NEXTSTEPS.md
+|-- README.md
+|-- app.tmpl.go
+|-- frontend
+|   `-- dist
+|       |-- assets
+|       |   |-- fonts
+|       |   |   |-- OFL.txt
+|       |   |   `-- nunito-v16-latin-regular.woff2
+|       |   `-- images
+|       |       `-- logo-dark.svg
+|       |-- index.html
+|       |-- main.css
+|       `-- main.js
+|-- go.mod.tmpl
+|-- main.tmpl.go
+|-- template.json
+`-- wails.tmpl.json
+```
+
+### Aperçu du modèle
+
+Le modèle par défaut se compose des fichiers et répertoires suivants :
+
+| Nom de fichier / répertoire | Description                                            |
+| -------------------------- | ------------------------------------------------------ |
+| NEXTSTEPS.md               | Instructions sur la façon de compléter le modèle       |
+| README.md                  | Le README publié avec le modèle                        |
+| app.tmpl.go                | Fichier de modèle `app.go`                             |
+| frontend/                  | Le répertoire contenant les ressources de l'interface  |
+| go.mod.tmpl                | Fichier de modèle `go.mod`                             |
+| main.tmpl.go               | Fichier de modèle `main.go`                            |
+| template.json              | Les métadonnées du modèle                              |
+| wails.tmpl.json            | Fichier de modèle `wails.json`                         |
+
+À ce stade, il est conseillé de suivre les étapes dans `NEXTSTEPS.md`.
+
+## Création d'un modèle à partir d'un projet existant
+
+Il est possible de créer un modèle à partir d'un projet d'interface existant en spécifiant le chemin du projet lors de la génération du modèle. Nous allons maintenant vous expliquer comment créer un modèle Vue 3 :
+
+- Installez la CLI Vue : `npm install -g @vue/cli`
+- Créez le projet par défaut : `vue create vue3-base`
+  - Sélectionnez `Default (Vue 3) ([Vue 3] babel, eslint)`
+- Une fois que le projet a été généré, exécutez :
+
+```shell
+> wails generate template -name wails-vue3-template -frontend .\vue3-base\
+Extraction des fichiers de modèle de base...
+Migration des fichiers du projet existant vers le répertoire de l'interface...
+Mise à jour des données de package.json...
+Renommage de package.json en package.tmpl.json...
+Mise à jour des données de package-lock.json...
+Renommage de package-lock.json en package-lock.tmpl.json...
+```
+
+- Le modèle peut maintenant être personnalisé tel que spécifié dans le fichier `NEXTSTEPS.md`
+- Une fois les fichiers prêts, vous pouvez les tester en exécutant : `wails init -n my-vue3-project -t .\wails-vue3-template\`
+- Pour tester le nouveau projet, exécutez : `cd my-vue3-project`, puis `wails build`
+- Une fois que le projet est compilé, exécutez-le : `.\build\bin\my-vue3-project.exe`
+- Vous devriez avoir une application Vue3 entièrement fonctionnelle :
+
+```mdx-code-block
+<div className="text--center">
+  <img
+    src={require("@site/static/img/vue3-template.png").default}
+    width="50%"
+  />
+</div>
+```
+
+## Publication des modèles
+
+La publication d'un modèle consiste simplement à pousser les fichiers sur GitHub. La meilleure pratique suivante est encouragée :
+
+- Supprimez tous les fichiers et répertoires indésirables (tels que `.git`) de votre répertoire frontend
+- Assurez-vous que `template.json` est complet, en particulier `helpurl`
+- Poussez les fichiers sur GitHub
+- Créez une demande d'extraction sur la page [Community Templates](../community/templates.mdx)
+- Annoncez le modèle sur le forum de discussion [Template Announcement](https://github.com/wailsapp/wails/discussions/825)

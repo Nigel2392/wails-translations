@@ -1,0 +1,47 @@
+# Routage
+
+Le routage est une façon populaire de changer les vues dans une application. Cette page offre quelques conseils sur la façon de le faire.
+
+## Vue
+
+L'approche recommandée pour le routage dans Vue est le [mode Hash](https://next.router.vuejs.org/guide/essentials/history-mode.html#hash-mode) :
+
+```js
+import { createRouter, createWebHashHistory } from "vue-router";
+
+const router = createRouter({
+  history: createWebHashHistory(),
+  routes: [
+    //...
+  ],
+});
+```
+
+## Angular
+
+L'approche recommandée pour le routage dans Angular est [HashLocationStrategy](https://codecraft.tv/courses/angular/routing/routing-strategies#_hashlocationstrategy):
+
+```ts
+RouterModule.forRoot(routes, { useHash: true });
+```
+
+## React
+
+L'approche recommandée pour le routage dans React est [HashRouter](https://reactrouter.com/en/main/router-components/hash-router):
+
+```jsx
+import { HashRouter } from "react-router-dom";
+
+ReactDOM.render(
+  <HashRouter basename={"/"}>
+    {/* Le reste de votre application se trouve ici */}
+    <Routes>
+      <Route path="/" element={<Page0 />} exact />
+      <Route path="/page1" element={<Page1 />} />
+      <Route path="/page2" element={<Page2 />} />
+      {/* plus... */}
+    </Routes>
+  </HashRouter>,
+  root
+);
+```

@@ -1,0 +1,96 @@
+# Handleiding Builds
+
+De Wails CLI doet veel werk voor het project, maar soms is het wenselijk om je project handmatig te bouwen.
+Dit document zal de verschillende bewerkingen bespreken die de CLI uitvoert en hoe dit op verschillende manieren kan worden bereikt.
+
+## Bouwproces
+
+Wanneer `wails build` of `wails dev` wordt gebruikt, voert de Wails CLI een veelvoorkomend bouwproces uit:
+
+    - Installeer frontend afhankelijkheden
+    - Bouw het frontend project
+    - Genereer bouw-assets
+    - Compileer de applicatie
+    - [optioneel] Comprimeer de applicatie
+
+### Installeer frontend afhankelijkheden
+
+#### CLI Stappen
+
+- Als de `-s` vlag is gegeven, wordt deze stap overgeslagen
+- Controleert `wails.json` om te zien of er een installatieopdracht is in de sleutel `frontend:install`
+- Als dat niet het geval is, wordt deze stap overgeslagen
+- Als dat wel het geval is, wordt gecontroleerd of `package.json` bestaat in de frontend directory. Als het niet bestaat, wordt deze stap overgeslagen
+- Er wordt een MD5 checksum gegenereerd van de inhoud van het `package.json` bestand
+- Het controleert of `package.json.md5` bestaat en als het bestaat, worden de inhoud ervan (een MD5 checksum) vergeleken met de gegenereerde checksum om te zien of de inhoud is gewijzigd. Als ze hetzelfde zijn, wordt deze stap overgeslagen
+- Als `package.json.md5` niet bestaat, wordt het aangemaakt met behulp van de gegenereerde MD5 checksum
+- Als er nu een bouw nodig is, of `node_modules` bestaat niet, of de `-f` vlag is gegeven, wordt de installatieopdracht uitgevoerd in de frontend directory
+
+#### Handmatige stappen
+
+Deze stap kan worden uitgevoerd vanaf de commandoregel of een script met `npm install`.
+
+### Bouw frontend project
+
+#### Wails CLI
+
+- Als de `-s` vlag is gegeven, wordt deze stap overgeslagen
+- Controleert `wails.json` om te zien of er een build opdracht is in de sleutel `frontend:build`
+- Als dat niet het geval is, wordt deze stap overgeslagen
+- Als dat wel het geval is, wordt het uitgevoerd in de frontend directory
+
+#### Handmatige stappen
+
+Deze stap kan worden uitgevoerd vanaf de commandoregel of een script met `npm run build` of wat het frontend build script ook is.
+
+### Genereer assets
+
+#### Wails CLI
+
+- Als de `-nopackage` vlag is ingesteld, wordt deze fase overgeslagen
+- Als het bestand `build/appicon.png` niet bestaat, wordt er een standaardbestand aangemaakt
+- Voor Windows, zie [Bundelen voor Windows](#windows)
+- Als `build/windows/icon.ico` niet bestaat, wordt het gemaakt vanuit de `build/appicon.png` afbeelding.
+
+##### Windows
+
+- Als `build/windows/icon.ico` niet bestaat, wordt het gemaakt vanuit `build/appicon.png` met behulp van icoonformaten van 256, 128, 64, 48, 32 en 16. Dit wordt gedaan met behulp van [winicon](https://github.com/leaanthony/winicon).
+- Als het bestand `build/windows/<projectnaam>.manifest` niet bestaat, wordt het aangemaakt vanuit een standaardversie.
+- Compileert de applicatie als een productiebouw (hierboven)
+- Gebruikt [winres](https://github.com/tc-hib/winres) om het icoon en manifest in een `.syso` bestand samen te voegen dat klaar is voor koppeling.
+
+#### Handmatige stappen
+
+- Maak `icon.ico` aan met behulp van de [winicon](https://github.com/leaanthony/winicon) CLI-tool (of een andere tool).
+- Maak / update een `.manifest` bestand voor je applicatie
+- Gebruik de [winres CLI](https://github.com/tc-hib/go-winres) om een `.syso` bestand te genereren.
+
+### Compileer applicatie
+
+#### Wails CLI
+
+- Als de `-clean` vlag is opgegeven, wordt de `build` directory verwijderd en opnieuw aangemaakt
+- Voor `wails dev` worden de volgende standaard Go vlaggen gebruikt: `-tags dev -gcflags "all=-N -l"`
+- Voor `wails build` worden de volgende standaard Go vlaggen gebruikt: `-tags desktop,production -ldflags "-w -s"`
+  - Op Windows, `-ldflags "-w -h -H windowsgui"`
+- Extra tags die aan de CLI worden doorgegeven met behulp van `-tags` worden toegevoegd aan de standaardwaarden
+- Extra ldflags die aan de CLI worden doorgegeven met behulp van `-ldflags` worden toegevoegd aan de standaardwaarden
+- De `-o` vlag wordt doorgegeven
+- De Go-compiler gespecificeerd door `-compiler` wordt gebruikt voor compilatie
+
+#### Handmatige stappen
+
+- Voor een ontwikkelingsbuild zou het minimale commando zijn: `go build -tags dev -gcflags "all=-N -l"`
+- Voor een productiebuild zou het minimale commando zijn: `go build -tags desktop,production -ldflags "-w -s -H windowsgui"`
+- Zorg ervoor dat je compileert in dezelfde directory als het `.syso` bestand
+
+### Comprimeer applicatie
+
+#### Wails CLI
+
+- Als de `-upx` vlag is opgegeven, wordt het programma `upx` uitgevoerd om de applicatie met de standaardinstellingen te comprimeren
+- Als `-upxflags` ook wordt doorgegeven, worden deze vlaggen in plaats van de standaardvlaggen gebruikt
+
+#### Handmatige stappen
+
+- Voer handmatig `upx [vlaggen]` uit om de applicatie te comprimeren.

@@ -1,0 +1,25 @@
+---
+sidebar_position: 6
+---
+
+# 菜单
+
+这些方法与应用程序菜单相关。
+
+:::info JavaScript
+
+JS运行时当前不支持菜单功能。
+
+:::
+
+### MenuSetApplicationMenu
+
+将应用程序菜单设置为给定的[菜单](../menus.mdx)。
+
+Go: `MenuSetApplicationMenu(ctx context.Context, menu *menu.Menu)`
+
+### MenuUpdateApplicationMenu
+
+更新应用程序菜单，以便获取传递给`MenuSetApplicationMenu`的菜单的任何更改。
+
+Go: `MenuUpdateApplicationMenu(ctx context.Context)`

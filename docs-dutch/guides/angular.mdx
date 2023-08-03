@@ -1,0 +1,14 @@
+# Angular
+
+Hoewel Wails geen Angular-template heeft, is het mogelijk om Angular te gebruiken met Wails.
+
+## Ontwikkelingsmodus
+
+Om de ontwikkelingsmodus te laten werken met Angular, moet je het volgende toevoegen aan je `wails.json`:
+
+```json
+  "frontend:build": "npx ng build",
+  "frontend:install": "npm install",
+  "frontend:dev:watcher": "npx ng serve",
+  "frontend:dev:serverUrl": "http://localhost:4200",
+```

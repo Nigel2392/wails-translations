@@ -1,0 +1,58 @@
+# Développement local
+
+## Aperçu
+
+Wails est en développement constant et de nouvelles versions sont régulièrement "taguées". Cela se produit généralement lorsque tout le code plus récent sur `master` a été testé et confirmé fonctionnel. Si vous avez besoin d'une correction de bogue ou d'une fonctionnalité qui n'a pas encore été incluse dans une version, il est possible d'utiliser la dernière version "bleeding edge" en suivant les étapes suivantes :
+
+- `git clone https://github.com/wailsapp/wails`
+- `cd wails/v2/cmd/wails`
+- `go install`
+
+REMARQUE : Le répertoire dans lequel vous avez cloné le projet sera désormais appelé "clonedir".
+
+La CLI de Wails sera maintenant à la toute dernière version.
+
+### Mise à jour de votre projet
+
+Pour mettre à jour les projets pour utiliser la dernière version de la bibliothèque Wails, mettez à jour le fichier `go.mod` du projet et assurez-vous que la ligne suivante se trouve en bas du fichier :
+
+`replace github.com/wailsapp/wails/v2 => <clonedir>`
+
+Exemple :
+
+Sur Windows :
+`replace github.com/wailsapp/wails/v2 => C:\Users\leaan\Documents\wails-v2-beta\wails\v2`
+
+Sur 'nix :
+`replace github.com/wailsapp/wails/v2 => /home/me/projects/wails/v2`
+
+Pour revenir à une version stable, exécutez :
+
+`go install github.com/wailsapp/wails/v2/cmd/wails@latest`
+
+## Tester une branche
+
+Si vous souhaitez tester une branche, suivez les instructions ci-dessus, mais assurez-vous de basculer sur la branche que vous souhaitez tester avant l'installation :
+
+- `git clone https://github.com/wailsapp/wails`
+- `cd wails`
+- `git checkout -b branch-to-test --track origin/branch-to-test`
+- `cd v2/cmd/wails`
+- `go install`
+
+Assurez-vous de [mettre à jour votre projet](#mise-à-jour-de-votre-projet) comme décrit ci-dessus.
+
+## Tester une PR
+
+Si vous souhaitez tester une PR, suivez les instructions ci-dessus, mais assurez-vous de récupérer la PR et de changer de branche avant d'installer.
+Veuillez remplacer `[IDdeLaPR]` par l'ID de la PR affichée sur github.com :
+
+- `git clone https://github.com/wailsapp/wails`
+- `cd wails`
+- `git fetch -u origin pull/[IDdeLaPR]/head:test/pr-[IDdeLaPR]`
+- `git checkout test/pr-[IDdeLaPR]`
+- `git reset --hard HEAD`
+- `cd v2/cmd/wails`
+- `go install`
+
+Assurez-vous de [mettre à jour votre projet](#mise-à-jour-de-votre-projet) comme décrit ci-dessus.

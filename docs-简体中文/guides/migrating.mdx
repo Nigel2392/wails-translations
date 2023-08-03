@@ -1,0 +1,191 @@
+# 从v1迁移
+
+## 概览
+
+Wails v2与v1相比有着重大的改变。本文档旨在突出这些变化和迁移现有项目的步骤。
+
+### 创建应用程序
+
+在v1中，使用`wails.CreateApp`创建主应用程序，使用`app.Bind`添加绑定，然后使用`app.Run()`运行应用程序。
+
+示例：
+
+```go title="v1"
+ app := wails.CreateApp(&wails.AppConfig{
+    Title:  "MyApp",
+    Width:  1024,
+    Height: 768,
+    JS:     js,
+    CSS:    css,
+    Colour: "#131313",
+  })
+  app.Bind(basic)
+  app.Run()
+```
+
+在v2中，只有一个方法`wails.Run()`，它接受[应用程序选项](../reference/options.mdx#application-options)。
+
+```go title="v2"
+	err := wails.Run(&options.App{
+		Title:  "MyApp",
+		Width:  800,
+		Height: 600,
+		AssetServer: &assetserver.Options{
+			Assets: assets,
+		},
+		Bind:   []interface{}{
+			basic,
+		},
+	})
+```
+
+### 绑定
+
+在v1中，可以绑定任意函数和结构体。在v2中，这一过程简化为只能绑定结构体。在v1中通过`Bind()`方法传递的结构体实例在v2中通过[应用程序选项](../reference/options.mdx#application-options)的`Bind`字段中指定：
+
+```go title="v1"
+  app := wails.CreateApp(/* options */)
+  app.Bind(basic)
+```
+
+```go title="v2"
+	err := wails.Run(&options.App{
+		/* other options */
+		Bind: []interface{}{
+			basic,
+		},
+	})
+```
+
+在v1中，绑定的方法在前端使用`window.backend`访问。现在改为使用`window.go`。
+
+### 应用程序生命周期
+
+在v1中，绑定的结构体中有两个特殊方法：`WailsInit()`和`WailsShutdown()`。这些方法已经被替换为[应用程序选项](../reference/options.mdx#application-options)中的3个生命周期钩子：
+
+- [OnStartup](../reference/options.mdx#onstartup)
+- [OnShutdown](../reference/options.mdx#onshutdown)
+- [OnDomReady](../reference/options.mdx#ondomready)
+
+注意：[OnDomReady](../reference/options.mdx#ondomready)替代了v1中的`wails:ready`系统事件。
+
+这些方法可以是普通函数，但通常的做法是将它们作为结构体的一部分：
+
+```go title="v2"
+    basic := NewBasicApp()
+	err := wails.Run(&options.App{
+	    /* Other Options */
+		OnStartup:  basic.startup,
+		OnShutdown: basic.shutdown,
+		OnDomReady: basic.domready,
+	})
+...
+type Basic struct {
+    ctx context.Context
+}
+func (b *Basic) startup(ctx context.Context) {
+    b.ctx = ctx
+}
+...
+```
+
+### 运行时
+
+v2中的运行时比v1更丰富，支持菜单、窗口操作和更好的对话框。方法的签名略有变化，请参考[运行时参考](../reference/runtime/intro.mdx)。
+
+在v1中，[运行时](../reference/runtime/intro.mdx)通过传递给`WailsInit()`的结构体可用。在v2中，运行时被移动到了自己的包中。运行时中的每个方法都接受传递给[OnStartup](../reference/options.mdx#onstartup)方法的`context.Context`。
+
+```go title="运行时示例"
+package main
+
+import "github.com/wailsapp/wails/v2/pkg/runtime"
+
+type Basic struct {
+	ctx context.Context
+}
+
+// startup is called at application startup
+func (a *App) startup(ctx context.Context) {
+	a.ctx = ctx
+	runtime.LogInfo(ctx, "Application Startup called!")
+}
+
+```
+
+### 资源
+
+v2中最大的变化是资源的处理方式。
+
+在v1中，资源通过两个应用程序选项传递：
+
+- `JS` - 应用程序的JavaScript
+- `CSS` - 应用程序的CSS
+
+这意味着生成单个JS和CSS文件的责任落在开发人员身上。这基本上要求使用复杂的打包工具，如webpack。
+
+在v2中，Wails不对前端资源做任何假设，就像一个Web服务器一样。所有应用程序资源都作为`embed.FS`传递给应用程序选项。
+
+**这意味着不需要打包资源、将图像编码为Base64或尝试使用自定义字体的打包器配置的黑暗技术。**
+
+在启动时，Wails将扫描给定的`embed.FS`以查找`index.html`并将其位置用作其他所有应用程序资源的根路径，就像Web服务器一样。
+
+示例：应用程序具有以下项目布局。所有最终资源放置在`frontend/dist`目录中：
+
+```shell
+.
+├── build/
+├── frontend/
+│   └── dist/
+│       ├── index.html
+│       ├── main.js
+│       ├── main.css
+│       └── logo.svg
+├── main.go
+└── wails.json
+```
+
+应用程序可以通过简单地创建一个`embed.FS`来使用这些资源：
+
+```go title="资源示例"
+//go:embed all:frontend/dist
+var assets embed.FS
+
+func main() {
+	err := wails.Run(&options.App{
+	    /* Other Options */
+		AssetServer: &assetserver.Options{
+			Assets: assets,
+		},
+	})
+}
+```
+
+当然，如果您愿意，可以使用打包器。唯一的要求是使用`embed.FS`将最终的应用程序资源目录传递给Wails的[应用程序选项](../reference/options.mdx#application-options)中的`Assets`键。
+
+### 项目配置
+
+在v1中，项目配置存储在项目根目录下的`project.json`文件中。在v2中，项目配置存储在项目根目录下的`wails.json`文件中。
+
+文件的格式略有不同。以下是对比：
+
+<p align="center">
+
+| v1                 | v2               | 注意事项                                                                                                                                                                   |
+| ------------------ | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name               | name             |                                                                                                                                                                            |
+| description        |                  | 已删除                                                                                                                                                                     |
+| author / name      | author / name    |                                                                                                                                                                            |
+| author / email     | author / email   |                                                                                                                                                                            |
+| version            | version          |                                                                                                                                                                            |
+| binaryname         | outputfilename   | 已更改                                                                                                                                                                     |
+| frontend / dir     |                  | 已删除                                                                                                                                                                     |
+| frontend / install | frontend:install | 已更改                                                                                                                                                                     |
+| frontend / build   | frontend:build   | 已更改                                                                                                                                                                     |
+| frontend / bridge  |                  | 已删除                                                                                                                                                                     |
+| frontend / serve   |                  | 已删除                                                                                                                                                                     |
+| tags               |                  | 已删除                                                                                                                                                                     |
+|                    | wailsjsdir       | 生成wailsjs模块的目录                                                                                                                                                      |
+|                    | assetdir         | “dev”模式下已编译的前端资源的目录。这通常是自动推断的，可以留空。                                                                                                           |
+|                    | reloaddirs       | 逗号分隔的其他目录列表，用于监视更改并在“dev”模式下触发重新加载。这仅对某些更高级的资源配置需要。                                                                           |
+
+</p>

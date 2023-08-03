@@ -1,0 +1,84 @@
+# Visual Studio Code
+
+Cette page contient des astuces diverses pour utiliser Visual Studio Code avec Wails.
+
+## Configuration de Vetur
+
+Un grand merci à [@Lyimmi](https://github.com/Lyimmi) pour cette astuce. Initialement publié 
+[ici](https://github.com/wailsapp/wails/issues/1791#issuecomment-1228158349).
+
+Vetur est un plugin populaire pour Visual Studio Code qui offre une coloration syntaxique et une complétion de code
+pour les projets Vue. Lorsque vous chargez un projet Wails dans VSCode, Vetur renvoie une erreur car il s'attend à 
+trouver le projet frontend dans le répertoire principal. Pour résoudre ce problème, vous pouvez faire ce qui suit:
+
+Créez un fichier nommé `vetur.config.js` à la racine du projet.
+
+```javascript
+// vetur.config.js
+/** @type {import('vls').VeturConfig} */
+module.exports = {
+    // **optionnel** par défaut : `{}` 
+    // remplace les paramètres de vscode
+    // Attention : cela n'affecte que les paramètres utilisés par Vetur.
+    settings: {
+        "vetur.useWorkspaceDependencies": true,
+        "vetur.experimental.templateInterpolationService": true
+    },
+    // **optionnel** par défaut : `[{ root: './' }]` 
+    // prise en charge des monorepos
+    projects: [
+        {
+            // **requis**
+            // Où se trouve votre projet ?
+            // C'est relatif à `vetur.config.js`.
+            // root: './packages/repo1',
+            root: './frontend',
+            // **optionnel** par défaut : `'package.json'` 
+            // Où se trouve `package.json` dans le projet ?
+            // Nous l'utilisons pour déterminer la version de Vue.
+            // C'est relatif à la propriété root.
+            package: './package.json',
+            // **optionnel**
+            // Où se trouve le fichier de configuration TypeScript dans le projet ?
+            // C'est relatif à la propriété root.
+            tsconfig: './tsconfig.json',
+            // **optionnel** par défaut : `'./.vscode/vetur/snippets'` 
+            // Où se trouvent les dossiers personnalisés de snippets vetur ?
+            snippetFolder: './.vscode/vetur/snippets',
+            // **optionnel** par défaut : `[]` 
+            // Enregistre le globalement les composants Vue.
+            // Si vous le définissez, vous pouvez obtenir l'autocomplétion par ces composants.
+            // C'est relatif à la propriété root.
+            // Remarque : cela ne le fait pas réellement. Vous devez utiliser `require.context` ou `Vue.component`
+            globalComponents: [
+                './src/components/**/*.vue'
+            ]
+        }
+    ]
+}
+```
+
+Ensuite, configurez `frontend/tsconfig.json` :
+
+```javascript
+{
+  "compilerOptions": {
+    "module": "system",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "outFile": "../../built/local/tsc.js",
+    "allowJs": true
+  },
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ],
+  "include": [
+    "src/**/*",
+    "wailsjs/**/*.ts"
+  ]
+}
+```
+Cela devrait vous permettre d'utiliser Vetur comme prévu.

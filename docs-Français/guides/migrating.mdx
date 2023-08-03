@@ -1,0 +1,194 @@
+# Migration depuis la v1
+
+## Aperçu
+
+Wails v2 est un changement important par rapport à la v1. Ce document vise à mettre en évidence les changements et les étapes de migration d'un projet existant.
+
+### Création de l'application
+
+Dans la v1, l'application principale est créée à l'aide de `wails.CreateApp`, des liaisons sont ajoutées avec `app.Bind`, puis l'application est exécutée à l'aide de `app.Run()`.
+
+Exemple :
+
+```go title="v1"
+ app := wails.CreateApp(&wails.AppConfig{
+    Title:  "MyApp",
+    Width:  1024,
+    Height: 768,
+    JS:     js,
+    CSS:    css,
+    Colour: "#131313",
+  })
+  app.Bind(basic)
+  app.Run()
+```
+
+Dans la v2, il n'y a qu'une seule méthode, `wails.Run()`, qui accepte les [options d'application](../reference/options.mdx#application-options).
+
+```go title="v2"
+	err := wails.Run(&options.App{
+		Title:  "MyApp",
+		Width:  800,
+		Height: 600,
+		AssetServer: &assetserver.Options{
+			Assets: assets,
+		},
+		Bind:   []interface{}{
+			basic,
+		},
+	})
+```
+
+### Binding
+
+Dans la version 1, il était possible de lier à la fois des fonctions arbitraires et des structures. Dans la version 2, cela a été simplifié pour ne lier que des structures.
+Les instances de structures qui étaient précédemment passées à la méthode `Bind()` dans la version 1 sont maintenant spécifiées dans le champ `Bind` des
+[options de l'application](../reference/options.mdx#application-options):
+
+```go title="v1"
+  app := wails.CreateApp(/* options */)
+  app.Bind(basic)
+```
+
+```go title="v2"
+	err := wails.Run(&options.App{
+		/* autres options */
+		Bind: []interface{}{
+			basic,
+		},
+	})
+```
+
+Dans la version 1, les méthodes liées étaient accessibles à la frontend via `window.backend`. Cela a été modifié en `window.go`.``
+
+### Cycle de vie de l'application
+
+Dans la version 1, il y avait 2 méthodes spéciales dans une structure liée : `WailsInit()` et `WailsShutdown()`. Celles-ci ont
+été remplacées par 3 points d'accroche du cycle de vie dans les [options de l'application](../reference/options.mdx#application-options) :
+
+- [OnStartup](../reference/options.mdx#onstartup)
+- [OnShutdown](../reference/options.mdx#onshutdown)
+- [OnDomReady](../reference/options.mdx#ondomready)
+
+Note : [OnDomReady](../reference/options.mdx#ondomready) remplace l'événement système `wails:ready` dans la version 1.
+
+Ces méthodes peuvent être des fonctions standard, mais une pratique courante est de les inclure dans une structure :
+
+```go title="v2"
+    basic := NewBasicApp()
+	err := wails.Run(&options.App{
+	    /* Autres options */
+		OnStartup:  basic.startup,
+		OnShutdown: basic.shutdown,
+		OnDomReady: basic.domready,
+	})
+...
+type Basic struct {
+    ctx context.Context
+}
+func (b *Basic) startup(ctx context.Context) {
+    b.ctx = ctx
+}
+...
+```
+
+### Runtime
+
+Le runtime dans la version 2 est beaucoup plus riche que dans la version 1, avec la prise en charge des menus, de la manipulation des fenêtres et de meilleurs dialogues. La signature des méthodes a légèrement changé - veuillez vous référer à la [Référence du Runtime](../reference/runtime/intro.mdx).
+
+Dans la version 1, le [runtime](../reference/runtime/intro.mdx) était disponible via une structure transmise à `WailsInit()`. Dans la version 2, le runtime a été déplacé dans son propre package. Chaque méthode dans le runtime prend le `context.Context` qui est transmis à la méthode [OnStartup](../reference/options.mdx#onstartup).
+
+```go title="Exemple de Runtime"
+package main
+
+import "github.com/wailsapp/wails/v2/pkg/runtime"
+
+type Basic struct {
+	ctx context.Context
+}
+
+// startup est appelée au démarrage de l'application
+func (a *App) startup(ctx context.Context) {
+	a.ctx = ctx
+	runtime.LogInfo(ctx, "Démarrage de l'application appelé !")
+}
+
+```
+
+### Ressources
+
+Le _plus grand_ changement dans la version 2 est la façon dont les ressources sont gérées.
+
+Dans la version 1, les ressources étaient transmises via 2 options d'application :
+
+- `JS` - Le JavaScript de l'application
+- `CSS` - Le CSS de l'application
+
+Cela signifiait que la responsabilité de générer un seul fichier JS et CSS incombait au développeur. Cela nécessitait essentiellement l'utilisation de packers compliqués tels que webpack.
+
+Dans la version 2, Wails ne fait aucune hypothèse sur vos ressources frontales, tout comme un serveur web. Toutes les ressources de votre application sont transmises aux options de l'application en tant qu'`embed.FS`.
+
+**Cela signifie qu'il n'est pas nécessaire de regrouper vos ressources, d'encoder les images en Base64 ou d'essayer l'art obscur de la configuration de l'empaqueteur pour utiliser des polices personnalisées**.
+
+Au démarrage, Wails balayera le `embed.FS` donné à la recherche de `index.html` et utilisera son emplacement comme chemin racine pour toutes les autres ressources de l'application, tout comme le ferait un serveur web.
+
+Exemple : Une application a la disposition de projet suivante. Toutes les ressources finales sont placées dans le répertoire `frontend/dist` :
+
+```shell
+.
+├── build/
+├── frontend/
+│   └── dist/
+│       ├── index.html
+│       ├── main.js
+│       ├── main.css
+│       └── logo.svg
+├── main.go
+└── wails.json
+```
+
+Ces ressources peuvent être utilisées par l'application en créant simplement un `embed.FS` :
+
+```go title="Exemple de ressources"
+//go:embed all:frontend/dist
+var assets embed.FS
+
+func main() {
+	err := wails.Run(&options.App{
+	    /* Autres options */
+		AssetServer: &assetserver.Options{
+			Assets: assets,
+		},
+	})
+}
+```
+
+Bien sûr, vous pouvez utiliser des empaqueteurs si vous le souhaitez. La seule exigence est de transmettre le répertoire des ressources finales de l'application à Wails en utilisant un `embed.FS` dans la clé `Assets` des [options de l'application](../reference/options.mdx#application-options).
+
+### Configuration du projet
+
+Dans la version 1, la configuration du projet était stockée dans le fichier `project.json` à la racine du projet. Dans la version 2, la configuration du projet est stockée dans le fichier `wails.json` à la racine du projet.
+
+Le format du fichier est légèrement différent. Voici une comparaison :
+
+<p align="center">
+
+| v1                 | v2               | Notes                                                                                                                                                                      |
+| ------------------ | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| nom                | nom              |                                                                                                                                                                            |
+| description        |                  | Supprimé                                                                                                                                                                   |
+| auteur / nom       | auteur / nom     |                                                                                                                                                                            |
+| auteur / email     | auteur / email   |                                                                                                                                                                            |
+| version            | version          |                                                                                                                                                                            |
+| nom binaire        | nomfichiersortie | Modifié                                                                                                                                                                    |
+| frontend / dir     |                  | Supprimé                                                                                                                                                                   |
+| frontend / install | frontend:install | Modifié                                                                                                                                                                    |
+| frontend / build   | frontend:build   | Modifié                                                                                                                                                                    |
+| frontend / bridge  |                  | Supprimé                                                                                                                                                                   |
+| frontend / serve   |                  | Supprimé                                                                                                                                                                   |
+| tags               |                  | Supprimé                                                                                                                                                                   |
+|                    | wailsjsdir       | Le répertoire pour générer les modules wailsjs                                                                                                                             |
+|                    | assetdir         | Le répertoire des ressources frontend compilées pour le mode "dev". Cela est généralement inféré et peut être laissé vide.                                                 |
+|                    | reloaddirs       | Liste séparée par des virgules de répertoires supplémentaires à surveiller pour les modifications et pour déclencher des rechargements en mode "dev". Cela n'est nécessaire que pour certaines configurations plus avancées des ressources. |
+
+</p>

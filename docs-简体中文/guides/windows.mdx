@@ -1,0 +1,64 @@
+# Windows
+
+本页面提供与开发Windows上的Wails应用程序相关的杂项指南。
+
+## 处理WebView2运行时依赖
+
+Windows上构建的Wails应用程序在Microsoft [WebView2运行时](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)上有运行时要求。
+Windows 11将默认安装此运行时，但某些机器可能没有安装。Wails提供了一种简单的方法来处理这种依赖关系。
+
+在构建时使用`-webview2`标志，您可以决定在未检测到合适的运行时时您的应用程序将采取的操作（包括安装的运行时是否太旧）。
+四个选项是：
+
+1. 下载
+2. 嵌入
+3. 浏览器
+4. 错误
+
+### 下载
+
+此选项将提示用户未找到合适的运行时，然后提供下载并运行Microsoft的WebView2站点上的官方启动程序。
+如果用户继续，将下载并运行官方启动程序。
+
+### 嵌入
+
+此选项将官方启动程序嵌入应用程序中。如果未找到合适的运行时，应用程序将提示运行启动程序。这会增加约150k的二进制文件大小。
+
+### 浏览器
+
+此选项将提示用户找不到合适的运行时，并提供打开浏览器到官方 WebView2 页面的选项，用户可以在该页面下载和安装引导程序。然后应用程序将退出，安装由用户自行完成。
+
+### 错误
+
+如果找不到合适的运行时，将向用户发出错误提示，并且不会执行任何进一步的操作。
+
+## 固定版本运行时
+
+处理 WebView2 依赖的另一种方法是自行打包它。您可以下载[固定版本运行时](https://developer.microsoft.com/microsoft-edge/webview2/#download-section)并将其与应用程序捆绑或下载。
+
+此外，在启动 Wails 时，您应该在 `windows.Options` 结构中指定固定版本 WebView2 运行时的路径。
+
+```go
+	wails.Run(&options.App{
+		Windows: &windows.Options{
+			WebviewBrowserPath:  "",
+		},
+	})
+```
+
+注意：当指定了 `WebviewBrowserPath` 时，如果最低要求版本不匹配或路径无效，则会强制使用 `error` 策略。
+
+## 启动其他程序
+
+当启动其他程序（例如脚本）时，您将看到窗口出现在屏幕上。为了隐藏窗口，您可以使用以下代码：
+
+```go
+cmd := exec.Command("your_script.exe")
+cmd.SysProcAttr = &syscall.SysProcAttr{
+	HideWindow:    true,
+	CreationFlags: 0x08000000,
+}
+cmd.Start()
+```
+
+解决方案由[sithembiso](https://github.com/sithembiso)提供，详见[讨论板块](https://github.com/wailsapp/wails/discussions/1734#discussioncomment-3386172)。

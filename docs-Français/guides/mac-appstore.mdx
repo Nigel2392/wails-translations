@@ -1,0 +1,99 @@
+# Guide du Mac App Store
+
+Cette page donne un aperçu rapide de la façon de soumettre votre application Wails sur le Mac App Store.
+
+## Prérequis
+
+- Vous devrez avoir un compte de développeur Apple. Veuillez trouver plus d'informations sur le site du [Programme de développement Apple](https://developer.apple.com/support/compare-memberships/).
+- Vous devrez avoir vos certificats, identifiants et application créés sur le portail du développeur. Plus d'informations à ce sujet ci-dessous.
+- Les outils de ligne de commande Xcode doivent être installés sur votre machine locale.
+
+#### Créer des certificats et identifiants
+
+1. Accédez à votre [compte développeur Apple](https://developer.apple.com/account/).
+2. Sous `Certificats, identifiants et profils`, cliquez sur `Identifiants` et enregistrez un nouvel identifiant d'application. Utilisez le format (com.example.app).
+3. Sous la même page, cliquez sur `Certificats` et générez de nouveaux certificats pour la distribution du Mac App Store. Téléchargez-les et importez les certificats dans Keychain sur votre machine locale.
+
+#### Créer une soumission d'application
+
+1. Rendez-vous sur le site [App Store Connect](https://appstoreconnect.apple.com/apps)
+2. Enregistrez une nouvelle application et liez l'identifiant de bundle que vous avez créé à l'étape précédente
+3. Remplissez votre application avec les captures d'écran, les descriptions, etc. corrects selon les exigences d'Apple
+4. Créez une nouvelle version de votre application
+
+#### Créer un profil d'approvisionnement
+
+1. Allez sur la page [Profils de développeur Apple](https://developer.apple.com/account/resources/profiles/list)
+2. Ajoutez un nouveau profil d'approvisionnement pour la distribution sur le Mac App Store
+3. Définissez le type de profil comme étant Mac et sélectionnez l'identifiant d'application pour l'application créée ci-dessus
+4. Sélectionnez le certificat de distribution d'application Mac
+5. Nommez le profil d'approvisionnement intégré et téléchargez le profil créé.
+
+## Processus du Mac App Store
+
+#### Activer le bac à sable de l'App Store d'Apple
+
+Les applications soumises au Mac App Store doivent s'exécuter sous le [bac à sable de l'App Store](https://developer.apple.com/app-sandboxing/) d'Apple. Vous devez créer un fichier `entitlements.plist` pour que cela fonctionne. La recommandation est de créer ce fichier dans le chemin suivant : `{PROJECT_DIR}/build/darwin/entitlements.plist`.
+
+**Fichier des droits d'accès d'exemple**
+
+Il s'agit d'un exemple de fichier de droits d'accès provenant de l'application RiftShare. Pour référence, veuillez insérer les droits d'accès requis par votre application. Consultez ce site pour plus d'informations. Vous devrez remplacer l'identifiant d'équipe et le nom de l'application par ceux que vous avez enregistrés précédemment.
+
+```xml title="entitlements.plist"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <key>com.apple.security.network.server</key>
+    <true/>
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <key>com.apple.security.files.downloads.read-write</key>
+    <true/>
+    <key>com.apple.application-identifier</key>
+    <string>IDENTIFIANT_EQUIPE.NOM_APPLICATION</string>
+    <key>com.apple.developer.team-identifier</key>
+    <string>IDENTIFIANT_EQUIPE</string>
+</dict>
+</plist>
+```
+
+**Ajoutez le profil de provisionnement intégré**
+Le profil de provisionnement créé précédemment doit être ajouté à la racine de l'application. Il doit être nommé embedded.provisionprofile.
+
+#### Construire et signer le package de l'application
+
+Voici un exemple de script pour construire et signer votre application pour la soumettre à l'App Store Mac. Il suppose que vous exécutez le script à partir du répertoire racine de votre projet.
+
+Notez que les certificats pour signer l'application et le programme d'installation sont différents. Assurez-vous de les importer tous les deux dans le trousseau d'accès. Trouvez les chaînes dans le trousseau d'accès et insérez-les ci-dessous. Remplissez les noms de vos certificats et le nom de l'application ci-dessous. L'exécution du script suivant générera un fichier `app.pkg` signé dans le répertoire racine de votre application.
+
+```bash title="macappstore-build.sh"
+#!/bin/bash
+
+APP_CERTIFICATE="Développeur d'application Mac tiers : VOTRE NOM (CODE)"
+PKG_CERTIFICATE="Développeur d'installateur Mac tiers : VOTRE NOM (CODE)"
+APP_NAME="VotreApp"
+
+wails build -platform darwin/universal -clean
+
+cp ./embedded.provisionprofile "./build/bin/$APP_NAME.app/Contents"
+
+codesign --timestamp --options=runtime -s "$APP_CERTIFICATE" -v --entitlements ./build/darwin/entitlements.plist ./build/bin/$APP_NAME.app
+
+productbuild --sign "$PKG_CERTIFICATE" --component ./build/bin/$APP_NAME.app /Applications ./$APP_NAME.pkg
+```
+
+#### Télécharger le bundle de l'application
+
+Vous devrez télécharger le fichier de package généré et l'associer à votre application avant de pouvoir le soumettre pour examen.
+
+1. Téléchargez l'application [Transporter](https://apps.apple.com/us/app/transporter/id1450874784) sur le Mac App Store.
+2. Ouvrez-le et connectez-vous avec votre identifiant Apple.
+3. Cliquez sur le signe + et sélectionnez le fichier `APP_NAME.pkg` que vous avez généré à l'étape précédente. Téléchargez-le.
+4. Retournez sur le site [App Store Connect](https://appstoreconnect.apple.com/apps) et accédez à nouveau à la soumission de votre application. Sélectionnez la version que vous êtes prêt à rendre disponible sur l'App Store. Sous `Build`, sélectionnez le package que vous avez téléchargé via Transporter.
+
+C'est tout ! Vous pouvez maintenant utiliser le site pour soumettre votre application pour examen. Après quelques jours ouvrables, si tout se passe bien, vous devriez voir votre application en direct sur le Mac App Store.

@@ -1,0 +1,14 @@
+# 模态文件管理器
+
+```mdx-code-block
+<p style={{ "text-align": "center" }}>
+  <img
+    src={require("@site/static/img/showcase/modalfilemanager.webp").default}
+  />
+  <br />
+</p>
+```
+
+[模态文件管理器](https://github.com/raguay/ModalFileManager) 是一个使用Web技术的双面板文件管理器。我的原始设计基于NW.js，可以在[这里](https://github.com/raguay/ModalFileManager-NWjs)找到。这个版本使用了相同的基于Svelte的前端代码（但自从与NW.js分离以来已经被大大修改），但后端是一个[Wails 2](https://wails.io/)实现。通过使用这个实现，我不再使用命令行的`rm`、`cp`等命令，但系统上必须安装git以下载主题和扩展。它完全使用Go编码，比之前的版本运行速度更快。
+
+这个文件管理器的设计原则和Vim相同：通过状态控制键盘操作。状态的数量不是固定的，但是非常可编程。因此，可以创建和使用无限数量的键盘配置。这是与其他文件管理器的主要区别。有可以从GitHub下载的主题和扩展。

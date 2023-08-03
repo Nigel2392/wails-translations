@@ -1,0 +1,270 @@
+# Code Ondertekening
+
+Dit is een gids over hoe je je binaries kunt ondertekenen die zijn gegenereerd met Wails op MacOS en Windows.
+De gids richt zich op CI-omgevingen, meer specifiek GitHub Actions.
+
+## Windows
+
+Allereerst heb je een code ondertekeningscertificaat nodig. Als je er nog geen hebt, vermeldt Microsoft's
+informatiepagina enkele providers [hier](https://docs.microsoft.com/en-us/windows-hardware/drivers/dashboard/get-a-code-signing-certificate).
+Houd er rekening mee dat een EV-certificaat niet vereist is, tenzij je kernelniveau-software zoals apparaatstuurprogramma's wilt schrijven. Voor het ondertekenen van je Wails-app is een standaard code ondertekeningscertificaat prima.
+
+Het is misschien een goed idee om bij je certificaatprovider te controleren
+hoe je je binaries op je lokale machine kunt ondertekenen voordat je geautomatiseerde buildsystemen gaat gebruiken, zodat je weet of er
+speciale vereisten zijn. Bijvoorbeeld, [hier](https://www.ssl.com/how-to/using-your-code-signing-certificate/) is de code ondertekeningsgids van SSL.com voor Windows.
+Als je weet hoe je lokaal kunt ondertekenen, is het gemakkelijker om eventuele problemen op te lossen in een CI-omgeving.
+Bijvoorbeeld, SSL.com code ondertekeningscertificaten vereisen de `/tr` vlag voor [SignTool.exe](https://docs.microsoft.com/en-us/windows/win32/seccrypto/signtool)
+terwijl andere providers mogelijk alleen de `/t` vlag nodig hebben voor het verstrekken van de tijdstempelserver. Populaire GitHub Actions voor het ondertekenen
+van Windows-binaries zoals [deze](https://github.com/Dana-Prajea/code-sign-action) ondersteunen de `/tr` vlag niet op SignTool.exe.
+Daarom zal deze gids zich richten op het handmatig ondertekenen van onze app met PowerShell-commando's, maar je kunt ook acties zoals de [code-sign-action](https://github.com/Dana-Prajea/code-sign-action)
+Action gebruiken als je dat liever hebt.
+
+Laten we eerst zorgen dat we onze Wails-app kunnen bouwen in onze GitHub CI. Hier is een klein sjabloon voor de workflow:
+
+```yaml
+name: "example"
+on:
+  workflow_dispatch:
+    # Deze actie start alleen wanneer je naar Actions gaat en handmatig de workflow start.
+
+jobs:
+  package:
+    strategy:
+      matrix:
+        platform: [windows-latest, macos-latest]
+        go-version: [1.18]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Installeer Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      # Je moet mogelijk hier handmatig je frontend bouwen, tenzij je build- en installatiecommando's voor de frontend hebt geconfigureerd in wails.json.
+      - name: Haal Wails op
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      - name: Bouw Wails-app
+        run: |
+          wails build
+      - name: uploads macOS-artefacten
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-macos
+          path: build/bin/*
+      - name: uploads Windows-artefacten
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-windows
+          path: build/bin/*
+```Volgende moeten we de GitHub-workflow toegang geven tot ons ondertekeningscertificaat. Dit wordt gedaan door uw .pfx- of .p12-certificaat te coderen in een base64-string. U kunt hiervoor de volgende opdracht gebruiken in PowerShell, ervan uitgaande dat uw certificaat 'my-cert.p12' wordt genoemd:
+
+```PowerShell
+certutil -encode .\my-cert.p12 my-cert-base64.txt
+```
+
+U zou nu uw .txt-bestand moeten hebben met het base64 gecodeerde certificaat. Het moet beginnen met _-----BEGIN CERTIFICATE-----_ en eindigen met _-----END CERTIFICATE-----_. Nu moet u twee actiegeheimen maken op GitHub. Ga naar _Instellingen -> Geheimen -> Acties_ en maak de volgende twee geheimen:
+
+- **WIN_SIGNING_CERT** met de inhoud van uw base64 gecodeerde certificaattekst.
+- **WIN_SIGNING_CERT_PASSWORD** met de inhoud van uw certificaatwachtwoord.
+
+Nu zijn we klaar om de ondertekening te implementeren in onze workflow met behulp van een van de twee methoden:
+
+### Methode 1: ondertekening met opdrachten
+
+Deze methode maakt gebruik van PowerShell-opdrachten om onze app te ondertekenen en geeft u controle over het hele ondertekeningsproces.
+
+Na de stap `"Build Wails app"` kunnen we de volgende stap toevoegen aan onze workflow:
+
+```yaml
+- name: Sign Windows binaries
+    if: matrix.platform == 'windows-latest'
+    run: |
+        echo "Creating certificate file"
+        New-Item -ItemType directory -Path certificate
+        Set-Content -Path certificate\certificate.txt -Value '${{ secrets.WIN_SIGNING_CERT }}'
+        certutil -decode certificate\certificate.txt certificate\certificate.pfx
+        echo "Signing our binaries"
+        & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd <signing algorithm> /t <timestamping server> /f certificate\certificate.pfx /p '${{ secrets.WIN_SIGNING_CERT_PASSWORD }}' <path to binary>
+
+```
+
+Dit script maakt een nieuwe map voor uw certificaatbestand, maakt het certificaatbestand van ons base64-geheim, converteert het naar een .pfx-bestand en ondertekent uiteindelijk de binair. De volgende variabelen moeten worden vervangen in de laatste regel:
+
+- **signing algorithm**: meestal sha256.
+- **timestamping server**: URL naar de tijdstempelserver die u wilt gebruiken met uw certificaat.
+- **path to binary**: pad naar de binair die u wilt ondertekenen.
+
+Aangezien onze Wails-configuratie `outputfilename` is ingesteld op "app.exe" en we een certificaat hebben van SSL.com, zou dit onze workflow zijn:
+
+```yaml
+name: "example"
+on:
+  workflow_dispatch:
+    # Deze actie wordt alleen gestart wanneer u naar Acties gaat en de workflow handmatig uitvoert.
+
+jobs:
+  package:
+    strategy:
+      matrix:
+        platform: [windows-latest, macos-latest]
+        go-version: [1.18]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      # U moet hier mogelijk uw frontend handmatig bouwen, tenzij u frontend build- en installatieopdrachten heeft geconfigureerd in wails.json.
+      - name: Get Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      - name: Build Wails app
+        run: |
+          wails build
+      - name: Sign Windows binaries
+        if: matrix.platform == 'windows-latest'
+        run: |
+          echo "Creating certificate file"
+          New-Item -ItemType directory -Path certificate
+          Set-Content -Path certificate\certificate.txt -Value '${{ secrets.WIN_SIGNING_CERT }}'
+          certutil -decode certificate\certificate.txt certificate\certificate.pfx
+          echo "Signing our binaries"
+          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ secrets.WIN_SIGNING_CERT_PASSWORD }}' .\build\bin\app.exe
+
+      - name: upload artifacts macOS
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-macos
+          path: build/bin/*
+      - name: upload artifacts windows
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-windows
+          path: build/bin/*
+```
+
+### Methode 2: automatisch ondertekenen met een actie
+
+Het is mogelijk om een Windows-code-ondertekeningsactie te gebruiken, zoals [deze](https://github.com/marketplace/actions/code-sign-a-file-with-pfx-certificate), maar let op dat deze een SHA1-hash voor het certificaat en een certificaatnaam vereist. Bekijk een voorbeeld van hoe u het kunt configureren op de [marktplaats](https://github.com/marketplace/actions/code-sign-a-file-with-pfx-certificate) van de actie.
+
+---
+
+
+## MacOS
+
+Allereerst heeft u uw code-ondertekeningscertificaat van Apple nodig. Als u er geen heeft, kan een eenvoudige zoekopdracht op Google u helpen er een te verkrijgen. Nadat u uw certificaat heeft, moet u het exporteren en coderen naar base64. [Deze tutorial](https://localazy.com/blog/how-to-automatically-sign-macos-apps-using-github-actions) laat zien hoe u dat op een eenvoudige manier kunt doen. Nadat u uw .p12-certificaatbestand heeft geëxporteerd, kunt u het coderen naar base64 zoals te zien is in de tutorial met de volgende opdracht:
+
+```bash
+base64 Certificates.p12 | pbcopy
+```
+
+Nu bent u klaar om enkele GitHub-projectgeheimen te maken, net als bij Windows:
+
+- **APPLE_DEVELOPER_CERTIFICATE_P12_BASE64** met de inhoud van uw zojuist gekopieerde base64-certificaat.
+- **APPLE_DEVELOPER_CERTIFICATE_PASSWORD** met de inhoud van uw certificaatwachtwoord.
+- **APPLE_PASSWORD** met de inhoud van een app-specifiek wachtwoord voor```yaml
+- name: Importeren van code-ondertekeningscertificaten voor macOS
+  if: matrix.platform == 'macos-latest'
+  uses: Apple-Actions/import-codesign-certs@v1
+  with:
+    # De certificaten in een PKCS12-bestand gecodeerd als een base64-string
+    p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_BASE64 }}
+    # Het wachtwoord dat wordt gebruikt om het PKCS12-bestand te importeren.
+    p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+- name: Ondertekenen van onze macOS-binair
+  if: matrix.platform == 'macos-latest'
+  run: |
+    echo "Ondertekenen van pakket"
+    gon -log-level=info ./build/darwin/gon-sign.json
+```
+
+Houd er rekening mee dat het ondertekenen van binair bestanden met Apple enkele minuten tot uren kan duren.
+
+## Gecombineerd workflow-bestand:
+
+Hier is ons GitHub-workflow-bestand met Windows + macOS gecombineerd:
+
+```yaml
+name: "voorbeeld gecombineerd"
+on:
+  workflow_dispatch:
+  # Deze actie start alleen wanneer je naar Actions gaat en handmatig de workflow uitvoert.
+
+jobs:
+  package:
+    strategy:
+      matrix:
+        platform: [windows-latest, macos-latest]
+        go-version: [1.18]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Installeer Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      # Je moet mogelijk hier je frontend handmatig bouwen, tenzij je frontend-build- en installatieopdrachten hebt geconfigureerd in wails.json.
+      - name: Haal Wails op
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      - name: Bouw Wails-app
+        run: |
+          wails build
+      - name: MacOS-download gon voor code-ondertekening en app-notarisatie
+        if: matrix.platform == 'macos-latest'
+        run: |
+          brew install mitchellh/gon/gon
+      - name: Importeren van code-ondertekeningscertificaten voor macOS
+        if: matrix.platform == 'macos-latest'
+        uses: Apple-Actions/import-codesign-certs@v1
+        with:
+          # De certificaten in een PKCS12-bestand gecodeerd als een base64-string
+          p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_BASE64 }}
+          # Het wachtwoord dat wordt gebruikt om het PKCS12-bestand te importeren.
+          p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+      - name: Ondertekenen van onze macOS-binair
+        if: matrix.platform == 'macos-latest'
+        run: |
+          echo "Ondertekenen van pakket"
+          gon -log-level=info ./build/darwin/gon-sign.json
+      - name: Ondertekenen van Windows-binair
+        if: matrix.platform == 'windows-latest'
+        run: |
+          echo "Maken van certificaatbestand"
+          New-Item -ItemType directory -Path certificate
+          Set-Content -Path certificate\certificate.txt -Value '${{ secrets.WIN_SIGNING_CERT }}'
+          certutil -decode certificate\certificate.txt certificate\certificate.pfx
+          echo "Ondertekenen van onze binair bestanden"
+          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ secrets.WIN_SIGNING_CERT_PASSWORD }}' .\build\bin\Monitor.exe
+      - name: uploaden van artefacten macOS
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-macos
+          path: build/bin/*
+      - name: uploaden van artefacten Windows
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: wails-binaries-windows
+          path: build/bin/*
+```
+
+# Eindnoten
+
+Deze handleiding is geïnspireerd op het RiftShare-project en de bijbehorende workflow, die sterk wordt aanbevolen om [hier](https://github.com/achhabra2/riftshare/blob/main/.github/workflows/build.yaml) te bekijken.

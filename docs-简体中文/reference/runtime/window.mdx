@@ -1,0 +1,250 @@
+# 窗口
+
+这些方法控制应用程序窗口。
+
+### WindowSetTitle
+
+设置窗口标题栏中的文本。
+
+Go: `WindowSetTitle(ctx context.Context, title string)`<br/>
+JS: `WindowSetTitle(title: string)`
+
+### WindowFullscreen
+
+使窗口全屏显示。
+
+Go: `WindowFullscreen(ctx context.Context)`<br/>
+JS: `WindowFullscreen()`
+
+### WindowUnfullscreen
+
+恢复窗口在全屏之前的尺寸和位置。
+
+Go: `WindowUnfullscreen(ctx context.Context)`<br/>
+JS: `WindowUnfullscreen()`
+
+### WindowIsFullscreen
+
+如果窗口处于全屏状态，则返回true。
+
+Go: `WindowIsFullscreen(ctx context.Context) bool`<br/>
+JS: `WindowIsFullscreen() bool`
+
+### WindowCenter
+
+将窗口居中显示在当前所在的监视器上。
+
+Go: `WindowCenter(ctx context.Context)`<br/>
+JS: `WindowCenter()`
+
+### WindowExecJS
+
+在窗口中执行任意的JS代码。
+
+该方法以异步方式在浏览器中运行代码，并立即返回。
+如果脚本导致任何错误，只能在浏览器控制台中找到。
+
+Go: `WindowExecJS(ctx context.Context, js string)`
+
+### WindowReload
+
+执行“重新加载”操作（重新加载当前页面）。
+
+Go: `WindowReload(ctx context.Context)`<br/>
+JS: `WindowReload()`
+
+### WindowReloadApp
+
+重新加载应用程序前端。
+
+Go: `WindowReloadApp(ctx context.Context)`<br/>
+JS: `WindowReloadApp()`
+
+### WindowSetSystemDefaultTheme
+
+仅适用于Windows。
+
+Go: `WindowSetSystemDefaultTheme(ctx context.Context)`<br/>
+JS: `WindowSetSystemDefaultTheme()`
+
+将窗口主题设置为系统默认（暗/亮）。
+
+### WindowSetLightTheme
+
+仅适用于Windows。
+
+Go: `WindowSetLightTheme(ctx context.Context)`<br/>
+JS: `WindowSetLightTheme()`
+
+将窗口主题设置为亮色。
+
+### WindowSetDarkTheme
+
+仅适用于Windows。
+
+Go: `WindowSetDarkTheme(ctx context.Context)`<br/>
+JS: `WindowSetDarkTheme()`
+
+将窗口主题设置为暗色。
+
+### WindowShow
+
+显示窗口，如果当前处于隐藏状态。
+
+Go: `WindowShow(ctx context.Context)`<br/>
+JS: `WindowShow()`
+
+### WindowHide
+
+隐藏窗口，如果当前处于可见状态。
+
+Go: `WindowHide(ctx context.Context)`<br/>
+JS: `WindowHide()`
+
+### WindowIsNormal
+
+如果窗口没有被最小化、最大化或全屏，则返回true。
+
+Go：`WindowIsNormal(ctx context.Context) bool`<br/>
+JS：`WindowIsNormal() bool`
+
+### WindowSetSize
+
+设置窗口的宽度和高度。
+
+Go：`WindowSetSize(ctx context.Context, width int, height int)`<br/>
+JS：`WindowSetSize(size: Size)`
+
+### WindowGetSize
+
+获取窗口的宽度和高度。
+
+Go：`WindowGetSize(ctx context.Context) (width int, height int)`<br/>
+JS：`WindowGetSize() : Size`
+
+### WindowSetMinSize
+
+设置窗口的最小尺寸。
+如果窗口当前的尺寸小于给定的尺寸，则会调整窗口的大小。
+
+将尺寸设置为`0,0`将禁用此约束。
+
+Go：`WindowSetMinSize(ctx context.Context, width int, height int)`<br/>
+JS：`WindowSetMinSize(size: Size)`
+
+### WindowSetMaxSize
+
+设置窗口的最大尺寸。
+如果窗口当前的尺寸大于给定的尺寸，则会调整窗口的大小。
+
+将尺寸设置为`0,0`将禁用此约束。
+
+Go：`WindowSetMaxSize(ctx context.Context, width int, height int)`<br/>
+JS：`WindowSetMaxSize(size: Size)`
+
+### WindowSetAlwaysOnTop
+
+设置窗口是否始终位于顶部。
+
+Go：`WindowSetAlwaysOnTop(ctx context.Context, b bool)`<br/>
+JS：`WindowSetAlwaysOnTop(b: Boolen)`
+
+### WindowSetPosition
+
+设置窗口相对于当前所在显示器的位置。
+
+Go：`WindowSetPosition(ctx context.Context, x int, y int)`<br/>
+JS：`WindowSetPosition(position: Position)`
+
+### WindowGetPosition
+
+获取窗口相对于当前所在监视器的位置。
+
+Go：`WindowGetPosition(ctx context.Context) (x int, y int)`<br/>
+JS：`WindowGetPosition() : Position`
+
+### WindowMaximise
+
+将窗口最大化以填充屏幕。
+
+Go：`WindowMaximise(ctx context.Context)`<br/>
+JS：`WindowMaximise()`
+
+### WindowUnmaximise
+
+将窗口恢复到最大化之前的尺寸和位置。
+
+Go：`WindowUnmaximise(ctx context.Context)`<br/>
+JS：`WindowUnmaximise()`
+
+### WindowIsMaximised
+
+如果窗口已最大化，则返回true。
+
+Go：`WindowIsMaximised(ctx context.Context) bool`<br/>
+JS：`WindowIsMaximised() bool`
+
+### WindowToggleMaximise
+
+在最大化和非最大化之间切换。
+
+Go：`WindowToggleMaximise(ctx context.Context)`<br/>
+JS：`WindowToggleMaximise()`
+
+### WindowMinimise
+
+最小化窗口。
+
+Go：`WindowMinimise(ctx context.Context)`<br/>
+JS：`WindowMinimise()`
+
+### WindowUnminimise
+
+将窗口恢复到最小化之前的尺寸和位置。
+
+Go：`WindowUnminimise(ctx context.Context)`<br/>
+JS：`WindowUnminimise()`
+
+### WindowIsMinimised
+
+如果窗口已最小化，则返回true。
+
+Go：`WindowIsMinimised(ctx context.Context) bool`<br/>
+JS：`WindowIsMinimised() bool`
+
+### WindowSetBackgroundColour
+
+将窗口的背景颜色设置为给定的RGBA颜色定义。
+该颜色将透过所有透明像素显示。
+
+R、G、B和A的有效值为0-255。
+
+:::info Windows
+
+在Windows上，只支持0或255的alpha值。
+任何非0的值将被视为255。
+
+:::
+
+Go: `WindowSetBackgroundColour(ctx context.Context, R, G, B, A uint8)`<br/>
+JS: `WindowSetBackgroundColour(R, G, B, A)`
+
+## TypeScript对象定义
+
+### 位置
+
+```ts
+interface Position {
+  x: number;
+  y: number;
+}
+```
+
+### 大小
+
+```ts
+interface Size {
+  w: number;
+  h: number;
+}
+```

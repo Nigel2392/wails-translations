@@ -1,0 +1,71 @@
+# 简介
+
+Wails 是一个可以使用 Go 和 Web 技术编写桌面应用程序的项目。
+
+可以将其视为 Go 的一种轻量级且快速的 Electron 替代方案。您可以轻松构建具有灵活性和强大功能的应用程序，结合 Go 的力量与现代化的前端技术。
+
+### 特性
+
+- 原生菜单、对话框、主题和半透明支持
+- 支持 Windows、macOS 和 Linux
+- 内置 Svelte、React、Preact、Vue、Lit 和 Vanilla JS 的模板
+- 可以轻松从 JavaScript 调用 Go 方法
+- 自动将 Go 结构体转换为 TypeScript 模型
+- Windows 上无需 CGO 或外部 DLL
+- 使用 [Vite](https://vitejs.dev/) 强大的实时开发模式
+- 强大的 CLI，便于创建、构建和打包应用程序
+- 丰富的 [运行时库](/docs/reference/runtime/intro)
+- 使用 Wails 构建的应用程序符合 Apple 和 Microsoft Store 的要求
+
+这是[varly](https://varly.app) - 一个使用Wails编写的适用于MacOS和Windows的桌面应用程序。它不仅外观精美，而且使用本机菜单和半透明效果 - 这是您对现代本机应用程序的期望。
+
+```mdx-code-block
+<p class="text--center">
+  <a href="https://varly.app/">
+    <img
+      src={require("@site/static/img/showcase/varly2.webp").default}
+      style={{ width: "75%", "max-width": "800px" }}
+    />
+  </a>
+</p>
+```
+
+### 快速启动模板
+
+Wails提供了一些预配置的模板，让您能够快速启动和运行应用程序。这些模板适用于以下框架：Svelte、React、Vue、Preact、Lit和Vanilla。每个模板都有JavaScript和TypeScript版本。
+
+### 本地元素
+
+Wails使用一个专门构建的库来处理本地元素，比如窗口、菜单、对话框等，因此您可以构建外观精美、功能丰富的桌面应用程序。
+
+**它不嵌入浏览器**，因此资源利用率高。相反，它使用平台的本地渲染引擎。在Windows上，这是基于Chromium构建的新的Microsoft Webview2库。
+
+### Go和JavaScript的互操作性
+
+Wails会自动将您的Go方法提供给JavaScript，因此您可以通过名称从前端调用它们！它甚至会为您的Go方法使用的结构生成TypeScript模型，因此您可以在Go和JavaScript之间传递相同的数据结构。
+
+### 运行时库
+
+Wails为Go和JavaScript提供了一个运行时库，它处理了许多现代应用程序所需的功能，比如事件处理、日志记录、对话框等。
+
+### 实时开发体验
+
+#### 自动重建
+
+当您以“dev”模式运行应用程序时，Wails将将您的应用程序构建为本地桌面应用程序，但会从磁盘读取您的资产。它将检测到对Go代码的任何更改，并自动重新构建和重新启动应用程序。
+
+#### 自动重新加载
+
+当检测到对应用程序资产的更改时，您正在运行的应用程序将“重新加载”，几乎立即反映您的更改。
+
+#### 在浏览器中开发应用程序
+
+如果您更喜欢在浏览器中调试和开发，那么Wails可以满足您的需求。运行的应用程序还具有一个Web服务器，可以在任何连接到它的浏览器中运行您的应用程序。它甚至会在磁盘上的资产更改时进行刷新。
+
+### 生产就绪的本地二进制文件
+
+当您准备进行应用程序的最终构建时，CLI将将其编译为一个单独的可执行文件，并将所有资产捆绑在其中。在Windows和MacOS上，可以创建用于分发的本地软件包。打包过程中使用的资产（图标、info.plist、清单文件等）是您项目的一部分，可以进行自定义，使您完全控制应用程序的构建方式。
+
+### 工具
+
+Wails CLI提供了一种无麻烦的方式来生成、构建和捆绑您的应用程序。它将处理繁重的工作，包括创建图标、使用最佳设置编译应用程序，并提供一个可分发、生产就绪的二进制文件。选择一些起始模板，快速启动并运行！

@@ -1,0 +1,136 @@
+# 动态资源
+
+如果你想要动态地加载或生成前端资源，可以通过使用[AssetsHandler](../reference/options#assetshandler)选项来实现。AssetsHandler是一个通用的`http.Handler`，它将在资源服务器上的任何非GET请求以及无法从捆绑的资源中提供GET请求时被调用，因为找不到该文件。
+
+通过安装自定义的AssetsHandler，你可以使用自定义的资源服务器来提供自己的资源。
+
+## 示例
+
+在我们的示例项目中，我们将创建一个简单的资源处理程序，它将从磁盘加载文件：
+
+```go title=main.go {17-36,49}
+package main
+
+import (
+	"embed"
+	"fmt"
+	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/options"
+	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"net/http"
+	"os"
+	"strings"
+)
+
+//go:embed all:frontend/dist
+var assets embed.FS
+
+type FileLoader struct {
+	http.Handler
+}
+
+func NewFileLoader() *FileLoader {
+	return &FileLoader{}
+}
+
+func (h *FileLoader) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	var err error
+	requestedFilename := strings.TrimPrefix(req.URL.Path, "/")
+	println("Requesting file:", requestedFilename)
+	fileData, err := os.ReadFile(requestedFilename)
+	if err != nil {
+		res.WriteHeader(http.StatusBadRequest)
+		res.Write([]byte(fmt.Sprintf("Could not load file %s", requestedFilename)))
+	}
+
+	res.Write(fileData)
+}
+
+func main() {
+	// Create an instance of the app structure
+	app := NewApp()
+
+	// Create application with options
+	err := wails.Run(&options.App{
+		Title:  "helloworld",
+		Width:  1024,
+		Height: 768,
+		AssetServer: &assetserver.Options{
+			Assets:  assets,
+			Handler: NewFileLoader(),
+		},
+		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 255},
+		OnStartup:        app.startup,
+		Bind: []interface{}{
+			app,
+		},
+	})
+
+	if err != nil {
+		println("Error:", err)
+	}
+}
+```
+
+当我们使用`wails dev`在开发模式下运行应用程序时，我们将看到以下输出：
+
+```
+DEB | [ExternalAssetHandler] Loading 'http://localhost:3001/favicon.ico'
+DEB | [ExternalAssetHandler] Loading 'http://localhost:3001/favicon.ico' failed, using AssetHandler
+Requesting file: favicon.ico
+```
+
+如你所见，当默认的资源服务器无法提供`favicon.ico`文件时，会调用资源处理程序。
+
+如果你右键单击主应用程序并选择"inspect"以打开开发工具，你可以通过在控制台中输入以下内容来测试此功能：
+
+```
+let response = await fetch('does-not-exist.txt');
+```
+
+这将在开发工具中生成一个错误。我们可以看到错误与我们预期的一样，由我们自定义的资源处理程序返回：
+
+```mdx-code-block
+<p className="text--center">
+  <img
+    src={require("@site/static/img/assetshandler-does-not-exist.webp").default}
+  />
+</p>
+```
+
+然而，如果我们请求`go.mod`，我们将看到以下输出：
+
+```mdx-code-block
+<p className="text--center">
+  <img src={require("@site/static/img/assetshandler-go-mod.webp").default} />
+</p>
+```
+
+这种技术可以用来直接加载图片到页面中。如果我们更新默认的简单模板，并替换logo图片：
+
+```html
+<img id="logo" class="logo" />
+```
+
+为：
+
+```html
+<img src="build/appicon.png" style="width: 300px" />
+```
+
+然后我们将看到以下内容：
+
+```mdx-code-block
+<p className="text--center">
+  <img
+    src={require("@site/static/img/assetshandler-image.webp").default}
+    style={{ width: "75%" }}
+  />
+</p>
+```
+
+:::warning
+
+以这种方式公开你的文件系统存在安全风险。建议你正确管理对你的文件系统的访问权限。
+
+:::

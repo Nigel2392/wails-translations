@@ -1,0 +1,87 @@
+# 项目配置
+
+项目配置位于项目目录中的 `wails.json` 文件中。配置的结构如下：
+
+```json5
+{
+  // 项目配置版本
+  "version": "",
+  // 项目名称
+  "name": "",
+  // 编译资源所在目录的相对路径，通常会自动推断，可以留空
+  "assetdir": "",
+  // 触发重新加载的其他目录（逗号分隔），仅用于某些高级资源配置
+  "reloaddirs": "",
+  // 构建文件所在的目录。默认为 'build'
+  "build:dir": "",
+  // 前端目录的相对路径。默认为 'frontend'
+  "frontend:dir": "",
+  // 安装 Node.js 依赖的命令，在前端目录中运行，通常是 `npm install`
+  "frontend:install": "",
+  // 构建资源的命令，在前端目录中运行，通常是 `npm run build`
+  "frontend:build": "",
+  // 这个命令已被 frontend:dev:build 替代。如果未指定 frontend:dev:build，则会回退到这个命令。\n如果也未指定这个命令，将回退到 frontend:build
+  "frontend:dev": "",
+  // 这个命令是 frontend:build 的开发环境版本。如果未指定，则会回退到 frontend:dev
+  "frontend:dev:build": "",
+  // 这个命令是 frontend:install 的开发环境版本。如果未指定，则会回退到 frontend:install
+  "frontend:dev:install": "",
+  // 在 `wails dev` 中以独立进程运行的命令，用于第三方的监视器或启动第三方开发服务器
+  "frontend:dev:watcher": "",
+  // 用于提供资源的第三方开发服务器的 URL，例如 Vite。\n如果设置为 'auto'，则 devServerUrl 将根据 Vite 的输出推断
+  "frontend:dev:serverUrl": "",
+  // 自动生成的 JS 模块所在的目录的相对路径
+  "wailsjsdir": "",
+  // 二进制文件的名称
+  "outputfilename": "",
+  // 当开发服务器检测到资源变化时，等待重新加载的默认时间
+  "debounceMS": 100,
+  // 将 Wails 开发服务器绑定到的地址。默认为 localhost:34115
+  "devServer": "",
+  // 在开发模式下以 shell 样式传递给应用程序的参数
+  "appargs": "",
+  // 定义是否应该运行构建钩子，即使它们是为与主机操作系统不同的操作系统定义的
+  "runNonNativeBuildHooks": false,
+  "preBuildHooks": {
+    // 在构建指定的 GOOS/GOARCH 之前执行的命令：${platform} 将被替换为 "GOOS/GOARCH"。"GOOS/GOARCH" 钩子会在 "GOOS/*" 和 "*/*" 钩子之前执行。
+    "GOOS/GOARCH": "",
+    // 在构建指定的 GOOS 之前执行的命令：${platform} 将被替换为 "GOOS/GOARCH"。"GOOS/*" 钩子会在 "*/*" 钩子之前执行。
+    "GOOS/*": "",
+    // 每次构建之前都会执行的命令：${platform} 将被替换为 "GOOS/GOARCH"。
+    "*/*": ""
+  },
+  "postBuildHooks": {
+    // 在构建指定的 GOOS/GOARCH 之后执行的命令：${platform} 将被替换为 "GOOS/GOARCH"，${bin} 将被替换为编译二进制文件的路径。"GOOS/GOARCH" 钩子会在 "GOOS/*" 和 "*/*" 钩子之前执行。
+    "GOOS/GOARCH": "",
+    // 在构建指定的 GOOS 之后执行的命令：${platform} 将被替换为 "GOOS/GOARCH"，${bin} 将被替换为编译二进制文件的路径。"GOOS/*" 钩子会在 "*/*" 钩子之前执行。
+    "GOOS/*": "",
+    // 每次构建之后都会执行的命令：${platform} 将被替换为 "GOOS/GOARCH"，${bin} 将被替换为编译二进制文件的路径。
+    "*/*": ""
+  },
+  // 用于填充清单和版本信息的数据
+  "info": {
+    // 公司名称。默认为 [项目名称]
+    "companyName": "",
+    // 产品名称。默认为 [项目名称]
+    "productName": "",
+    // 产品的版本。默认为 '1.0.0'
+    "productVersion": "",
+    // 产品的版权信息。默认为 'Copyright.........'
+    "copyright": "",
+    // 应用程序的简短注释。默认为 '使用 Wails 构建（https://wails.app）'
+    "comments": ""
+  },
+  // 'multiple'：每个架构一个安装程序。'single'：所有正在构建的架构使用单个通用安装程序。默认为 'multiple'
+  "nsisType": "",
+  // 应用程序是否应该被混淆。默认为 false
+  "obfuscated": "",
+  // 当使用 obfuscated 标志时，传递给 garble 命令的参数
+  "garbleargs": ""
+}
+```
+
+当运行`wails build`或`wails dev`时，此文件将由Wails CLI读取。
+
+`wails build/dev`中的`assetdir`、`reloaddirs`、`wailsjsdir`、`debounceMS`、`devserver`和`frontenddevserverurl`标志将更新项目配置，并成为后续运行的默认值。
+
+此文件的JSON模式位于[此处](https://wails.io/schemas/config.v2.json)。

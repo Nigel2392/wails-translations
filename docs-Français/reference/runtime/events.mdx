@@ -1,0 +1,41 @@
+# Événements
+
+Le runtime Wails fournit un système d'événements unifié, où les événements peuvent être émis ou reçus par Go ou JavaScript.
+Facultativement, des données peuvent être transmises avec les événements. Les auditeurs recevront les données dans les types de données locales.
+
+### EventsOn
+
+Cette méthode configure un écouteur pour le nom d'événement donné. Lorsqu'un événement de type `nomDeLEvénement` est [émis](#EventsEmit),
+le rappel est déclenché. Toutes les données supplémentaires envoyées avec l'événement émis seront transmises au rappel. Elle renvoie
+une fonction pour annuler l'écouteur.
+
+Go: `EventsOn(ctx context.Context, nomDeLEvénement string, rappel func(donnéesOptionnelles ...interface{})) func()`<br/>
+JS: `EventsOn(nomDeLEvénement string, rappel fonction(donnéesOptionnelles?: any)): () => void`
+
+### EventsOff
+
+Cette méthode désenregistre l'écouteur pour le nom d'événement donné, éventuellement plusieurs écouteurs peuvent être désenregistrés via `nomsDEvénementsSupplémentaires`.
+
+Go: `EventsOff(ctx context.Context, nomDeLEvénement string, nomsDEvénementsSupplémentaires ...string)`<br/>
+JS: `EventsOff(nomDeLEvénement string, ...nomsDEvénementsSupplémentaires)`
+
+### ÉvénementsUneFois
+
+Cette méthode configure un écouteur pour le nom d'événement donné, mais ne se déclenchera qu'une seule fois. Elle renvoie une fonction pour annuler l'écouteur.
+
+Go: `ÉvénementsUneFois(ctx context.Context, nomEvenement string, rappel func(donnéesOptionnelles ...interface{})) func()`<br/>
+JS: `ÉvénementsUneFois(nomEvenement string, rappel function(donnéesOptionnelles?: any)): () => void`
+
+### ÉvénementsSurPlusieurs
+
+Cette méthode configure un écouteur pour le nom d'événement donné, mais ne se déclenchera qu'un maximum de `counter` fois. Elle renvoie une fonction pour annuler l'écouteur.
+
+Go: `ÉvénementsSurPlusieurs(ctx context.Context, nomEvenement string, rappel func(donnéesOptionnelles ...interface{}), counter int) func()`<br/>
+JS: `ÉvénementsSurPlusieurs(nomEvenement string, rappel function(donnéesOptionnelles?: any), counter int): () => void`
+
+### ÉvénementsÉmettre
+
+Cette méthode émet l'événement donné. Des données optionnelles peuvent être transmises avec l'événement. Cela déclenchera tous les écouteurs d'événements.
+
+Go: `ÉvénementsÉmettre(ctx context.Context, nomEvenement string, donnéesOptionnelles ...interface{})`<br/>
+JS: `ÉvénementsÉmettre(nomEvenement: string, ...donnéesOptionnelles: any)`

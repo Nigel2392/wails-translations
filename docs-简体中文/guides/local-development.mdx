@@ -1,0 +1,57 @@
+# 本地开发
+
+## 概述
+
+Wails处于不断开发中，新版本会定期进行“tagging”。通常情况下，当`master`分支上的所有新代码都经过测试并确认可用时，就会发布新版本。如果你需要修复bug或使用尚未发布的新功能，可以按照以下步骤使用最新的“开发中”版本：
+
+- `git clone https://github.com/wailsapp/wails`
+- `cd wails/v2/cmd/wails`
+- `go install`
+
+注意：你克隆项目的目录现在将被称为“clonedir”。
+
+现在，Wails CLI已经是最新版本。
+
+### 更新你的项目
+
+要更新项目以使用最新版本的Wails库，请更新项目的`go.mod`文件，并确保以下行位于文件底部：
+
+`replace github.com/wailsapp/wails/v2 => <clonedir>`
+
+示例：
+
+在Windows上：
+`replace github.com/wailsapp/wails/v2 => C:\Users\leaan\Documents\wails-v2-beta\wails\v2`
+
+在*nix系统上：
+`replace github.com/wailsapp/wails/v2 => /home/me/projects/wails/v2`
+
+要恢复到稳定版本，请运行：
+
+`go install github.com/wailsapp/wails/v2/cmd/wails@latest`
+
+## 测试分支
+
+如果你想测试一个分支，请按照上述说明操作，但在安装之前确保切换到你想要测试的分支：
+
+- `git clone https://github.com/wailsapp/wails`
+- `cd wails`
+- `git checkout -b branch-to-test --track origin/branch-to-test`
+- `cd v2/cmd/wails`
+- `go install`
+
+确保按照上述说明[更新你的项目](#更新你的项目)。
+
+## 测试PR
+
+如果你想测试一个PR，请按照上述说明操作，但在安装之前确保获取PR并切换到相应的分支。请将`[IDofThePR]`替换为github.com上显示的PR的ID：
+
+- `git clone https://github.com/wailsapp/wails`
+- `cd wails`
+- `git fetch -u origin pull/[IDofThePR]/head:test/pr-[IDofThePR]`
+- `git checkout test/pr-[IDofThePR]`
+- `git reset --hard HEAD`
+- `cd v2/cmd/wails`
+- `go install`
+
+确保按照上述说明[更新你的项目](#更新你的项目)。

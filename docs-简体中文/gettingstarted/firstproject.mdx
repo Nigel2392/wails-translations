@@ -1,0 +1,127 @@
+# 创建项目
+
+## 项目生成
+
+现在已经安装了CLI，您可以使用`wails init`命令来生成一个新的项目。
+
+选择您喜欢的框架：
+
+```mdx-code-block
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+<Tabs
+    defaultValue="Svelte"
+    values={[
+        {label: "Svelte", value: "Svelte"},
+        {label: "React", value: "React"},
+        {label: "Vue", value: "Vue"},
+        {label: "Preact", value: "Preact"},
+        {label: "Lit", value: "Lit"},
+        {label: "Vanilla", value: "Vanilla"},
+    ]}
+>
+<TabItem value="Svelte">
+    使用JavaScript生成一个<a href={"https://svelte.dev/"}>Svelte</a>项目：<br/><br/>
+
+    wails init -n myproject -t svelte
+
+如果您更喜欢使用TypeScript：<br/>
+
+    wails init -n myproject -t svelte-ts
+
+</TabItem>
+<TabItem value="React">
+    使用JavaScript生成一个<a href={"https://reactjs.org/"}>React</a>项目：<br/><br/>
+
+    wails init -n myproject -t react
+
+如果您更喜欢使用TypeScript：<br/>
+
+    wails init -n myproject -t react-ts
+
+</TabItem>
+<TabItem value="Vue">
+    使用JavaScript生成一个<a href={"https://vuejs.org/"}>Vue</a>项目：<br/><br/>
+
+    wails init -n myproject -t vue
+
+如果您更喜欢使用TypeScript：<br/>
+
+    wails init -n myproject -t vue-ts
+
+</TabItem>
+<TabItem value="Preact">
+    使用JavaScript生成一个<a href={"https://preactjs.com/"}>Preact</a>项目：<br/><br/>
+
+    wails init -n myproject -t preact
+
+如果您更喜欢使用TypeScript：<br/>
+
+    wails init -n myproject -t preact-ts
+
+</TabItem>
+<TabItem value="Lit">
+    使用JavaScript生成一个<a href={"https://lit.dev/"}>Lit</a>项目：<br/><br/>
+
+    wails init -n myproject -t lit
+
+如果您更喜欢使用TypeScript：<br/>
+
+    wails init -n myproject -t lit-ts
+
+</TabItem>
+<TabItem value="Vanilla">
+    使用JavaScript生成一个Vanilla项目：<br/><br/>
+
+    wails init -n myproject -t vanilla
+
+如果您更喜欢使用TypeScript：<br/>
+
+    wails init -n myproject -t vanilla-ts
+
+</TabItem>
+</Tabs>
+```
+
+<hr />
+
+还有其他[社区模板](../community/templates.mdx)可用，提供不同的功能和框架。
+
+要查看其他可用选项，可以运行`wails init -help`。
+更多详细信息可以在[CLI参考](../reference/cli.mdx#init)中找到。
+
+## 项目布局
+
+Wails项目具有以下布局：
+
+```plaintext
+.
+├── build/
+│   ├── appicon.png
+│   ├── darwin/
+│   └── windows/
+├── frontend/
+├── go.mod
+├── go.sum
+├── main.go
+└── wails.json
+```
+
+### 项目结构概述
+
+- `/main.go` - 主应用程序
+- `/frontend/` - 前端项目文件
+- `/build/` - 项目构建目录
+- `/build/appicon.png` - 应用程序图标
+- `/build/darwin/` - 适用于Mac的项目文件
+- `/build/windows/` - 适用于Windows的项目文件
+- `/wails.json` - 项目配置
+- `/go.mod` - Go模块文件
+- `/go.sum` - Go模块校验和文件
+
+`frontend`目录与Wails无关，可以是您选择的任何前端项目。
+
+`build`目录在构建过程中使用。这些文件可以更新以自定义构建。如果从构建目录中删除文件，默认版本将重新生成。
+
+`go.mod`中的默认模块名称为"changeme"。您应该将其更改为更合适的名称。

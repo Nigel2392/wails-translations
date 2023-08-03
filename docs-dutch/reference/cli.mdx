@@ -1,0 +1,239 @@
+# CLI
+
+De Wails CLI heeft een aantal commando's die worden gebruikt voor het beheren van je projecten. Alle commando's worden op de volgende manier uitgevoerd:
+
+`wails <commando> <vlaggen>`
+
+## init
+
+`wails init` wordt gebruikt voor het genereren van projecten.
+
+| Vlag               | Beschrijving                                                                                                             |       Standaard       |
+| :----------------- | :---------------------------------------------------------------------------------------------------------------------- | :-------------------: |
+| -n "projectnaam"   | Naam van het project. **Verplicht**.                                                                                     |                       |
+| -d "projectmap"    | Map waarin het project wordt gemaakt                                                                                     | Naam van het project  |
+| -g                 | Initialiseer git repository                                                                                              |                       |
+| -l                 | Lijst beschikbare projecttemplates                                                                                       |                       |
+| -q                 | Onderdruk uitvoer naar de console                                                                                        |                       |
+| -t "templatenaam"  | Het projecttemplate dat gebruikt moet worden. Dit kan de naam zijn van een standaardtemplate of een URL naar een extern template gehost op github. |         vanilla         |
+| -ide               | Genereer IDE-projectbestanden                                                                                            |                       |
+| -f                 | Forceer het bouwen van de applicatie                                                                                     |        false        |
+
+Voorbeeld:
+`wails init -n test -d mytestproject -g -ide vscode -q`
+
+Dit genereert een project genaamd "test" in de map "mytestproject", initialiseert git,
+genereert vscode projectbestanden en doet dit stilzwijgend.
+
+Meer informatie over het gebruik van IDE's met Wails is te vinden [hier](../guides/ides.mdx).
+
+### Externe sjablonen
+
+Externe sjablonen (gehost op GitHub) worden ondersteund en kunnen worden geïnstalleerd door de project-URL van het sjabloon te gebruiken.
+
+Voorbeeld:
+`wails init -n test -t https://github.com/leaanthony/testtemplate[@v1.0.0]`
+
+Een lijst met door de gemeenschap onderhouden sjablonen is te vinden [hier](../community/templates.mdx).
+
+:::warning Let op
+
+**Het Wails-project onderhoudt, is niet verantwoordelijk en niet aansprakelijk voor sjablonen van derden!**
+
+Als u twijfelt over een sjabloon, bekijk dan `package.json` en `wails.json` om te zien welke scripts worden uitgevoerd en welke pakketten worden geïnstalleerd.
+
+:::
+
+## build
+
+`wails build` wordt gebruikt om uw project te compileren naar een productieklare binair bestand.
+
+| Vlag                 | Beschrijving                                                                                                                                                                 | Standaard                                                                                                                                       |
+|:---------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------|
+| -clean               | Maakt de `build/bin` directory schoon                                                                                                                                       |                                                                                                                                               |
+| -compiler "compiler" | Gebruik een andere Go-compiler om te bouwen, bijv. go1.15beta1                                                                                                              | go                                                                                                                                            |
+| -debug               | Behoudt debuginformatie in de applicatie en toont de debugconsole. Maakt het gebruik van de devtools mogelijk in het venster van de applicatie                                |                                                                                                                                               |
+| -devtools            | Maakt het gebruik van de devtools mogelijk in het venster van de applicatie in productie (wanneer -debug niet wordt gebruikt)                                             |                                                                                                                                               |
+| -dryrun              | Drukt de bouwopdracht af zonder deze uit te voeren                                                                                                                          |                                                                                                                                               |
+| -f                   | Forceer het bouwen van de applicatie                                                                                                                                        |                                                                                                                                               |
+| -garbleargs          | Argumenten om door te geven aan garble                                                                                                                                      | `-literals -tiny -seed=random`                                                                                                                |
+| -ldflags "flags"     | Extra ldflags om door te geven aan de compiler                                                                                                                              |                                                                                                                                               |
+| -m                   | Sla mod tidy over voordat u compileert                                                                                                                                      |                                                                                                                                               |
+| -nopackage           | Verpak de applicatie niet                                                                                                                                                    |                                                                                                                                               |
+| -nocolour            | Schakel kleur uit in de output                                                                                                                                              |                                                                                                                                               |
+| -nosyncgomod         | Synchroniseer go.mod niet met de Wails-versie                                                                                                                               |                                                                                                                                               |
+| -nsis                | Genereer NSIS-installatieprogramma voor Windows                                                                                                                             |                                                                                                                                               |
+| -o bestandsnaam      | Uitvoerbestandsnaam                                                                                                                                                          |                                                                                                                                               |
+| -obfuscated          | Obfuscateer de applicatie met behulp van [garble](https://github.com/burrowers/garble)                                                                                     |                                                                                                                                               |
+| -platform            | Bouw voor de opgegeven (komma-gescheiden) [platforms](../reference/cli.mdx#platforms), bijv. `windows/arm64`. Let op, als u de architectuur niet opgeeft, wordt `runtime.GOARCH` gebruikt. | platform = `GOOS`-omgevingsvariabele als deze is opgegeven, anders `runtime.GOOS`.<br/>arch = `GOARCH`-omgevingsvariabele als deze is opgegeven, anders `runtime.GOARCH`. |
+| -race                | Bouw met behulp van de race detector van Go                                                                                                                                  |                                                                                                                                               |
+| -s                   | Sla het bouwen van de frontend over                                                                                                                                         |                                                                                                                                               |
+| -skipbindings        | Sla generatie van bindings over                                                                                                                                              |                                                                                                                                               |
+| -tags "extra tags"   | Bouwtags om door te geven aan de Go-compiler. Moet tussen aanhalingstekens staan. Gescheiden door een spatie of een komma (maar niet beide)                                 |                                                                                                                                               |
+| -trimpath            | Verwijder alle bestandssysteempaden uit het resulterende uitvoerbare bestand                                                                                               |                                                                                                                                               |
+| -u                   | Werk het `go.mod`-bestand van uw project bij om dezelfde versie van Wails als de CLI te gebruiken                                                                           |                                                                                                                                               |
+| -upx                 | Comprimeer het eindbinair bestand met behulp van "upx"                                                                                                                     |                                                                                                                                               |
+| -upxflags            | Vlaggen om door te geven aan upx                                                                                                                                            |                                                                                                                                               |
+| -v int               | Niveau van uitvoer (0 - stil, 1 - standaard, 2 - uitgebreid)                                                                                                                | 1                                                                                                                                             |
+| -webview2            | WebView2-installatiestrategie: download, embed, browser, error                                                                                                              | download                                                                                                                                      |
+| -windowsconsole      | Behoud het consolevenster voor Windows-builds                                                                                                                               |                                                                                                                                               |
+
+Voor een gedetailleerde beschrijving van de `webview2` vlag, raadpleeg de [Windows](../guides/windows.mdx) Gids.
+
+Als u liever bouwt met behulp van de standaard Go-tools, raadpleeg dan de [Handmatige Builds](../guides/manual-builds.mdx) gids.
+
+Voorbeeld:
+
+`wails build -clean -o myproject.exe`
+
+:::info
+
+Op de Mac wordt de applicatie gebundeld met `Info.plist`, niet met `Info.dev.plist`.
+
+:::
+
+:::info UPX op Apple Silicon
+
+Er zijn [problemen](https://github.com/upx/upx/issues/446) met het gebruik van UPX op Apple Silicon.
+
+:::
+
+:::info UPX op Windows
+
+Sommige Antivirusleveranciers markeren `upx` gecomprimeerde binaries ten onrechte als een virus, zie [issue](https://github.com/upx/upx/issues/437).
+
+:::
+
+### Platforms
+
+Ondersteunde platforms zijn:
+
+| Platform         | Beschrijving                                  |
+| :--------------- | :-------------------------------------------- |
+| darwin           | MacOS + architectuur van de bouwmachine       |
+| darwin/amd64     | MacOS 10.13+ AMD64                            |
+| darwin/arm64     | MacOS 11.0+ ARM64                             |
+| darwin/universal | MacOS AMD64+ARM64 universele toepassing       |
+| windows          | Windows 10/11 + architectuur van de bouwmachine |
+| windows/amd64    | Windows 10/11 AMD64                           |
+| windows/arm64    | Windows 10/11 ARM64                           |
+| linux            | Linux + architectuur van de bouwmachine       |
+| linux/amd64      | Linux AMD64                                   |
+| linux/arm64      | Linux ARM64                                   |
+
+## Dokter
+
+`wails dokter` voert diagnostische tests uit om ervoor te zorgen dat uw systeem klaar is voor ontwikkeling.
+
+Voorbeeld:
+
+``` 
+Wails CLI v2.0.0-beta
+
+Systeemscans - Even geduld aub (dit kan lang duren)...Klaar.
+
+Systeem
+-------
+OS:             Windows 10 Pro
+Versie:         2009 (Build: 19043)
+ID:             21H1
+Go Versie:      go1.18
+Platform:       windows
+Architectuur:   amd64
+
+Afhankelijkheid   Pakketnaam      Status          Versie
+----------------   ------------    ------          -------
+WebView2         N/A             Geïnstalleerd   93.0.961.52
+npm               N/A             Geïnstalleerd   6.14.15
+*upx              N/A             Geïnstalleerd   upx 3.96
+
+* - Optionele afhankelijkheid
+
+Diagnose
+---------
+Uw systeem is klaar voor Wails-ontwikkeling!
+
+```
+
+## dev
+
+`wails dev` wordt gebruikt om uw applicatie in een "live development" modus uit te voeren. Dit betekent:
+
+- Het `go.mod` bestand van de applicatie wordt bijgewerkt om dezelfde versie van Wails als de CLI te gebruiken.
+- De applicatie wordt automatisch gecompileerd en uitgevoerd.
+- Er wordt een watcher gestart die een herbouw van uw ontwikkelingsapplicatie zal activeren als er wijzigingen worden gedetecteerd in uw go-bestanden.
+- Er wordt een webserver gestart op `http://localhost:34115` die uw applicatie (niet alleen de frontend) over http serveert. Hierdoor kunt u uw favoriete browserontwikkelingsextensies gebruiken.
+- Alle applicatie-assets worden vanaf de schijf geladen. Als ze worden gewijzigd, wordt de applicatie automatisch opnieuw geladen (niet herbouwd). Alle verbonden browsers worden ook opnieuw geladen.
+- Er wordt een JS-module gegenereerd die het volgende biedt:
+  - JavaScript wrappers van uw Go-methoden met automatisch gegenereerde JSDoc, die code-hinting bieden.
+  - TypeScript-versies van uw Go-structuren, die kunnen worden geconstrueerd en doorgegeven aan uw go-methoden.
+- Er wordt een tweede JS-module gegenereerd die een wrapper en TS-declaratie biedt voor de runtime.
+- Op macOS wordt de applicatie gebundeld in een `.app`-bestand en wordt het uitgevoerd. Voor ontwikkeling wordt een `build/darwin/Info.dev.plist` gebruikt.
+
+| Vlag                         | Beschrijving                                                                                                                                                                         | Standaard              |
+|:-----------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------|
+| -appargs "args"              | Argumenten die aan de toepassing worden doorgegeven in shell-stijl                                                                                                                    |                        |
+| -assetdir "./path/to/assets" | Serveer assets vanuit de opgegeven directory in plaats van de meegeleverde asset FS te gebruiken                                                                                    | Waarde in `wails.json` |
+| -browser                     | Opent een browser naar `http://localhost:34115` bij het opstarten                                                                                                                    |                        |
+| -compiler "compiler"         | Gebruik een andere go-compiler om te bouwen, bijv. go1.15beta1                                                                                                                       | go                     |
+| -debounce                    | De wachttijd voor het opnieuw laden na detectie van een wijziging in een asset                                                                                                       | 100 (milliseconden)    |
+| -devserver "host:port"       | Het adres om de wails-devserver aan te binden                                                                                                                                        | "localhost:34115"      |
+| -extensions                  | Extensies om opnieuw te bouwen (gescheiden door komma's)                                                                                                                             | go                     |
+| -forcebuild                  | Forceer het bouwen van de toepassing                                                                                                                                                 |                        |
+| -frontenddevserverurl "url"  | Gebruik een URL van een externe devserver om assets te serveren, bijv. Vite                                                                                                          | ""                     |
+| -ldflags "flags"             | Extra ldflags om door te geven aan de compiler                                                                                                                                       |                        |
+| -loglevel "loglevel"         | Loglevel om te gebruiken - Trace, Debug, Info, Warning, Error                                                                                                                        | Debug                  |
+| -nocolour                    | Schakel kleur uit in de CLI-uitvoer                                                                                                                                                 | false                  |
+| -noreload                    | Schakel automatisch herladen uit wanneer assets veranderen                                                                                                                           |                        |
+| -nosyncgomod                 | Synchroniseer go.mod niet met de Wails-versie                                                                                                                                       | false                  |
+| -race                        | Bouw met de race-detector van Go                                                                                                                                                     | false                  |
+| -reloaddirs                  | Extra mappen om opnieuw te laden (gescheiden door komma's)                                                                                                                           | Waarde in `wails.json` |
+| -s                           | Sla het bouwen van de frontend over                                                                                                                                                 | false                  |
+| -save                        | Sla de opgegeven vlaggen `assetdir`, `reloaddirs`, `wailsjsdir`, `debounce`, `devserver` en `frontenddevserverurl` op in `wails.json` om de standaardwaarden te worden voor volgende oproepen. |                        |
+| -skipbindings                | Sla het genereren van bindings over                                                                                                                                                 |                        |
+| -tags "extra tags"           | Bouwtags om door te geven aan de compiler (tussen aanhalingstekens en gescheiden door spaties)                                                                                      |                        |
+| -v                           | Verbose-niveau (0 - stil, 1 - standaard, 2 - uitgebreid)                                                                                                                             | 1                      |
+| -wailsjsdir                  | De map waarin de gegenereerde Wails JS-modules worden gegenereerd                                                                                                                    | Waarde in `wails.json` |
+
+Voorbeeld:
+
+`wails dev -assetdir ./frontend/dist -wailsjsdir ./frontend/src -browser`
+
+Deze opdracht zal het volgende doen:
+
+- De applicatie bouwen en uitvoeren (meer details [hier](../guides/manual-builds.mdx))
+- De Wails JS-modules genereren in `./frontend/src`
+- Controleren op updates van bestanden in `./frontend/dist` en herladen bij elke wijziging
+- Een browser openen en verbinding maken met de applicatie
+
+Er is meer informatie over het gebruik van deze functie met bestaande frameworkscripts [hier](../guides/application-development.mdx#live-reloading).
+
+## genereren
+
+### sjabloon
+
+Wails gebruikt sjablonen voor het genereren van projecten. De opdracht `wails generate template` helpt bij het maken van een sjabloon zodat het kan worden gebruikt voor het genereren van projecten.
+
+| Vlag             | Beschrijving                                  |
+|:-----------------|:---------------------------------------------|
+| -name            | De naam van het sjabloon (Verplicht)          |
+| -frontend "pad"  | Pad naar het frontend-project om te gebruiken in het sjabloon |
+
+Voor meer details over het maken van sjablonen, raadpleeg de [Gids voor sjablonen](../guides/templates.mdx).
+
+### module
+
+De opdracht `wails generate module` stelt u in staat om handmatig de `wailsjs`-map voor uw applicatie te genereren.
+
+## update
+
+`wails update` zal de versie van de Wails CLI bijwerken.
+
+| Vlag               | Beschrijving                           |
+|:-------------------|:--------------------------------------|
+| -pre               | Bijwerken naar de nieuwste pre-release versie  |
+| -version "versie" | Een specifieke versie van de CLI installeren |
+
+## version
+
+`wails version` geeft eenvoudig de huidige CLI-versie weer.

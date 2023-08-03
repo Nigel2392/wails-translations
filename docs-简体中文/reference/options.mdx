@@ -1,0 +1,880 @@
+# 选项
+
+## 应用程序选项
+
+`Options.App` 结构包含应用程序配置。
+它被传递给 `wails.Run()` 方法：
+
+```go title="示例"
+import (
+    "github.com/wailsapp/wails/v2/pkg/options"
+    "github.com/wailsapp/wails/v2/pkg/options/assetserver"
+    "github.com/wailsapp/wails/v2/pkg/options/linux"
+    "github.com/wailsapp/wails/v2/pkg/options/mac"
+    "github.com/wailsapp/wails/v2/pkg/options/windows"
+)
+
+func main() {
+
+    err := wails.Run(&options.App{
+        Title:              "菜单演示",
+        Width:              800,
+        Height:             600,
+        DisableResize:      false,
+        Fullscreen:         false,
+        WindowStartState:   options.Maximised,
+        Frameless:          true,
+        MinWidth:           400,
+        MinHeight:          400,
+        MaxWidth:           1280,
+        MaxHeight:          1024,
+        StartHidden:        false,
+        HideWindowOnClose:  false,
+        BackgroundColour:   &options.RGBA{R: 0, G: 0, B: 0, A: 255},
+        AlwaysOnTop:        false,
+        AssetServer: &assetserver.Options{
+            Assets:     assets,
+            Handler:    assetsHandler,
+            Middleware: assetsMidldeware,
+		},
+        Menu:               app.applicationMenu(),
+        Logger:             nil,
+        LogLevel:           logger.DEBUG,
+        LogLevelProduction: logger.ERROR,
+        OnStartup:          app.startup,
+        OnDomReady:         app.domready,
+        OnShutdown:         app.shutdown,
+        OnBeforeClose:      app.beforeClose,
+        CSSDragProperty:   "--wails-draggable",
+        CSSDragValue:      "drag",
+        EnableDefaultContextMenu: false,
+        EnableFraudulentWebsiteDetection: false,
+        ZoomFactor:           1.0,
+        IsZoomControlEnabled: false,
+        Bind: []interface{}{
+            app,
+        },
+        ErrorFormatter: func(err error) any { return err.Error() },
+        Windows: &windows.Options{
+            WebviewIsTransparent:              false,
+            WindowIsTranslucent:               false,
+            BackdropType:                      windows.Mica,
+            DisableWindowIcon:                 false,
+            DisableFramelessWindowDecorations: false,
+            WebviewUserDataPath:               "",
+            WebviewBrowserPath:                "",
+            Theme:                             windows.SystemDefault,
+            CustomTheme: &windows.ThemeSettings{
+                DarkModeTitleBar:   windows.RGB(20, 20, 20),
+                DarkModeTitleText:  windows.RGB(200, 200, 200),
+                DarkModeBorder:     windows.RGB(20, 0, 20),
+                LightModeTitleBar:  windows.RGB(200, 200, 200),
+                LightModeTitleText: windows.RGB(20, 20, 20),
+                LightModeBorder:    windows.RGB(200, 200, 200),
+            },
+            // 可自定义的用户消息
+            Messages *windows.Messages
+            // 当 Windows 进入低功耗模式时调用 OnSuspend
+            OnSuspend func()
+            // 当 Windows 从低功耗模式恢复时调用 OnResume
+            OnResume func(),
+			WebviewGpuDisabled: false,
+        },
+        Mac: &mac.Options{
+            TitleBar: &mac.TitleBar{
+                TitlebarAppearsTransparent: true,
+                HideTitle:                  false,
+                HideTitleBar:               false,
+                FullSizeContent:            false,
+                UseToolbar:                 false,
+                HideToolbarSeparator:       true,
+            },
+			Appearance:           mac.NSAppearanceNameDarkAqua,
+            WebviewIsTransparent: true,
+            WindowIsTranslucent:  false,
+            About: &mac.AboutInfo{
+                Title:   "我的应用程序",
+                Message: "© 2021 Me",
+                Icon:    icon,
+            },
+        },
+        Linux: &linux.Options{
+            Icon: icon,
+            WindowIsTranslucent: false,
+			WebviewGpuPolicy: linux.WebviewGpuPolicyAlways,
+        },
+        Debug: options.Debug{
+            OpenInspectorOnStartup: false,
+        },
+    })
+
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+
+```
+
+### 标题
+
+窗口标题栏中显示的文本。
+
+名称：标题<br/>
+类型：`字符串`
+
+### 宽度
+
+窗口的初始宽度。
+
+名称：宽度<br/>
+类型：`整数`<br/>
+默认值：1024。
+
+### 高度
+
+窗口的初始高度。
+
+名称：高度<br/>
+类型：`整数`<br/>
+默认值：768
+
+### 禁用调整大小
+
+默认情况下，主窗口是可调整大小的。将其设置为`true`将使其保持固定大小。
+
+名称：禁用调整大小<br/>
+类型：`布尔值`
+
+### 全屏
+
+已弃用：请使用[窗口启动状态](#windowstartstate)。
+
+### 窗口启动状态
+
+定义窗口在启动时如何呈现。
+
+| 值         | Windows | Mac   | Linux |
+| ---------- | ------- | ----- | ----- |
+| 全屏       | ✅      | ✅    | ✅    |
+| 最大化     | ✅      | ✅    | ✅    |
+| 最小化     | ✅      | ❌    | ✅    |
+
+名称：窗口启动状态<br/>
+类型：`options.WindowStartState`
+
+### 无边框
+
+当设置为`true`时，窗口将没有边框或标题栏。
+另请参阅[无边框窗口](../guides/frameless.mdx)。
+
+名称：无边框<br/>
+类型：`布尔值`
+
+### 最小宽度
+
+设置窗口的最小宽度。如果在`宽度`中给定的值小于此值，
+窗口将默认设置为`最小宽度`。
+
+名称：最小宽度<br/>
+类型：`整数`
+
+### 最小高度
+
+设置窗口的最小高度。如果在`高度`中给定的值小于此值，
+窗口将默认设置为`最小高度`。
+
+名称：最小高度<br/>
+类型：`整数`
+
+### 最大宽度
+
+设置窗口的最大宽度。如果在`宽度`中给定的值大于此值，
+窗口将默认设置为`最大宽度`。
+
+名称：最大宽度<br/>
+类型：`整数`
+
+### 最大高度
+
+设置窗口的最大高度。如果在`高度`中给定的值大于此值，
+窗口将默认设置为`最大高度`。
+
+名称：最大高度<br/>
+类型：`整数`
+
+### StartHidden
+
+当设置为 `true` 时，应用程序将在调用 [WindowShow](../reference/runtime/window.mdx#windowshow) 之前被隐藏。
+
+名称：StartHidden<br/>
+类型：`bool`
+
+### HideWindowOnClose
+
+默认情况下，关闭窗口将关闭应用程序。将其设置为 `true` 表示关闭窗口将隐藏窗口。
+
+名称：HideWindowOnClose<br/>
+类型：`bool`
+
+### BackgroundColour
+
+此值是窗口的默认背景颜色。
+示例：options.NewRGBA(255,0,0,128) - 50% 透明度的红色
+
+名称：BackgroundColour<br/>
+类型：`*options.RGBA`<br/>
+默认值：白色
+
+### AlwaysOnTop
+
+表示窗口在失去焦点时应保持在其他窗口上方。
+
+名称：AlwaysOnTop<br/>
+类型：`bool`
+
+### Assets
+
+已弃用：请使用 [AssetServer 特定选项](#assetserver) 中的 Assets。
+
+### AssetsHandler
+
+已弃用：请使用 [AssetServer 特定选项](#assetserver) 中的 AssetsHandler。
+
+### AssetServer
+
+这定义了 AssetServer 的特定选项。它允许使用静态资源自定义 AssetServer，使用 `http.Handler` 动态提供资源，或使用 `assetserver.Middleware` 钩入请求链。
+
+当前不支持 `http.Request` 的所有功能，请参阅以下功能矩阵：
+
+| 特性                   | Win | Mac | Lin    |
+| ----------------------- | --- | --- | ------ |
+| GET                     | ✅  | ✅  | ✅      |
+| POST                    | ✅  | ✅  | ✅ [^1] |
+| PUT                     | ✅  | ✅  | ✅ [^1] |
+| PATCH                   | ✅  | ✅  | ✅ [^1] |
+| DELETE                  | ✅  | ✅  | ✅ [^1] |
+| 请求头                 | ✅  | ✅  | ✅ [^1] |
+| 请求体                 | ✅  | ✅  | ✅ [^2] |
+| 请求体流               | ✅  | ✅  | ✅ [^2] |
+| 响应状态码             | ✅  | ✅  | ✅ [^1] |
+| 响应头                 | ✅  | ✅  | ✅ [^1] |
+| 响应体                 | ✅  | ✅  | ✅      |
+| 响应体流               | ❌  | ✅  | ✅      |
+| WebSockets              | ❌  | ❌  | ❌      |
+| HTTP 重定向 30x        | ✅  | ❌  | ❌      |
+
+[^1]: 这需要支持 WebKit2GTK 2.36+，并且您的应用程序需要使用构建标签 `webkit2_36` 来激活此功能的支持。这还将 WebKit2GTK 的最低要求提高到 2.36。
+[^2]: 这需要支持 WebKit2GTK 2.40+，并且您的应用程序需要使用构建标签 `webkit2_40` 来激活此功能的支持。这还将 WebKit2GTK 的最低要求提高到 2.40。
+
+名称：AssetServer<br/>
+类型：`*assetserver.Options`
+
+#### 资源
+
+应用程序使用的静态前端资源。
+
+首先尝试从此`fs.FS`提供GET请求。如果该文件的`fs.FS`返回`os.ErrNotExist`，请求处理将回退到[处理程序](#handler)，并尝试从中提供GET请求。
+
+如果设置为nil，则所有GET请求都将转发到[处理程序](#handler)。
+
+名称：资源<br/>
+类型：`fs.FS`
+
+#### 处理程序
+
+资源处理程序是用于处理无法找到的资源的通用`http.Handler`。
+
+对于由于`os.ErrNotExist`而无法从[资源](#assets)提供的每个GET请求，都会调用处理程序。此外，所有非GET请求将始终从此处理程序提供。如果未定义，则在处理程序将被调用的情况下，结果如下：
+
+- GET请求：`http.StatusNotFound`
+- 其他请求：`http.StatusMethodNotAllowed`
+
+注意：当与前端开发服务器结合使用时，可能会有限制，例如，Vite会在不包含文件扩展名的每个路径上提供index.html。
+
+名称：资源处理程序<br/>
+类型：`http.Handler`
+
+#### 中间件
+
+中间件是一个HTTP中间件，允许在AssetServer请求链中进行挂钩。它允许动态跳过默认的请求处理程序，例如实现特定的路由等。中间件被调用以构建一个由AssetSever使用的新的`http.Handler`，它还接收AssetServer使用的默认处理程序作为参数。
+
+如果未定义，则执行默认的AssetServer请求链。
+
+名称：中间件<br/>
+类型：`assetserver.Middleware`
+
+### 菜单
+
+应用程序使用的菜单。有关菜单的更多详细信息，请参见[菜单参考](../reference/runtime/menu.mdx)。
+
+:::note
+
+在Mac上，如果没有指定菜单，将创建一个默认菜单。
+
+:::
+
+名称：菜单<br/>
+类型：`*menu.Menu`
+
+### 日志记录器
+
+应用程序使用的日志记录器。有关日志记录的更多详细信息，请参见[日志参考](../reference/runtime/log.mdx)。
+
+名称：日志记录器<br/>
+类型：`logger.Logger`<br/>
+默认值：输出到标准输出
+
+### 日志级别
+
+默认的日志级别。有关日志记录的更多详细信息，请参见[日志参考](../reference/runtime/log.mdx)。
+
+名称：日志级别<br/>
+类型：`logger.LogLevel`<br/>
+默认值：在开发模式下为`Info`，在生产模式下为`Error`
+
+### 生产日志级别
+
+用于生产构建的默认日志级别。有关日志记录的更多详细信息，请参见[日志参考](../reference/runtime/log.mdx)。
+
+名称：生产日志级别<br/>
+类型：`logger.LogLevel`<br/>
+默认值：`Error`
+
+### OnStartup
+
+在前端创建完成之后，但在`index.html`加载之前调用的回调函数。它接收应用程序上下文。
+
+名称：OnStartup<br/>
+类型：`func(ctx context.Context)`
+
+### OnDomReady
+
+在前端加载`index.html`及其资源之后调用的回调函数。它接收应用程序上下文。
+
+名称：OnDomReady<br/>
+类型：`func(ctx context.Context)`
+
+### OnShutdown
+
+在前端销毁之后，应用程序终止之前调用的回调函数。它接收应用程序上下文。
+
+名称：OnShutdown<br/>
+类型：`func(ctx context.Context)`
+
+### OnBeforeClose
+
+如果设置了此回调函数，当应用程序即将退出时，无论是点击窗口关闭按钮还是调用`runtime.Quit`，都会调用该函数。返回true将导致应用程序继续运行，返回false将按正常流程继续关闭。这对于与用户确认是否退出程序非常有用。
+
+示例：
+
+```go title=windowsapp.go
+func (b *App) beforeClose(ctx context.Context) (prevent bool) {
+    dialog, err := runtime.MessageDialog(ctx, runtime.MessageDialogOptions{
+        Type:          runtime.QuestionDialog,
+        Title:         "Quit?",
+        Message:       "Are you sure you want to quit?",
+    })
+
+    if err != nil {
+        return false
+    }
+    return dialog != "Yes"
+}
+```
+
+名称：OnBeforeClose<br/>
+类型：`func(ctx context.Context) bool`
+
+### CSSDragProperty
+
+指示用于标识哪些元素可以用于拖动窗口的CSS属性。默认值：`--wails-draggable`。
+
+名称：CSSDragProperty<br/>
+类型：`string`
+
+### CSSDragValue
+
+指示`CSSDragProperty`样式应具有的值以拖动窗口。默认值：`drag`。
+
+名称：CSSDragValue<br/>
+类型：`string`
+
+### EnableDefaultContextMenu
+
+EnableDefaultContextMenu在生产环境中启用浏览器的默认上下文菜单。
+
+默认情况下，浏览器的默认上下文菜单仅在开发环境和`-debug`或`-devtools` [构建](../reference/cli.mdx#build)中以及开发工具检查器中可用。使用此选项，您可以在`production`中启用默认上下文菜单，但除非使用了`-devtools`构建标志，否则开发工具检查器将不可用。
+
+启用此选项时，默认情况下上下文菜单仅对文本上下文（需要剪切/复制/粘贴的上下文）显示。要覆盖此行为，您可以在任何HTML元素（包括`body`）上使用CSS属性`--default-contextmenu`以及以下值：
+
+| CSS样式                        | 行为                                                                                                                                             |
+|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--default-contextmenu: auto;` | （**默认值**）仅当满足以下条件时才显示默认上下文菜单：<br/> contentEditable为true OR 文本已被选中 OR 元素是input或textarea                                 |
+| `--default-contextmenu: show;` | 总是显示默认上下文菜单                                                                                                          |
+| `--default-contextmenu: hide;` | 总是隐藏默认上下文菜单                                                                                                          |
+
+这条规则像任何普通的CSS规则一样被继承，所以嵌套的工作方式与预期相同。
+
+:::note
+此过滤功能仅在生产环境中启用，因此在开发环境和调试构建中，完整的上下文菜单始终可用。
+:::
+
+:::warning
+此过滤功能不是安全措施，开发人员应该预计完整的上下文菜单随时可能泄漏，其中可能包含诸如（下载图像、重新加载、保存网页）的命令。如果这是一个问题，请勿启用默认上下文菜单。
+:::
+
+
+名称：EnableDefaultContextMenu<br/>
+类型：`bool`
+
+### EnableFraudulentWebsiteDetection
+
+EnableFraudulentWebsiteDetection启用欺诈性内容的扫描服务，例如恶意软件或钓鱼企图。
+这些服务可能会将您的应用程序的信息（如导航到的URL和可能的其他内容）发送到苹果和微软的云服务。
+
+名称：EnableFraudulentWebsiteDetection<br/>
+类型：`bool`
+
+### ZoomFactor
+
+名称：ZoomFactor<br/>
+类型：`float64`
+
+这定义了WebView2的缩放因子。这是与Edge用户激活的缩放相匹配的选项。
+'
+
+### IsZoomControlEnabled
+
+名称：IsZoomControlEnabled<br/>
+类型：`bool`
+
+此选项允许用户更改缩放因子。请注意，可以在选项中设置缩放因子，而在运行时禁止用户更改它（例如，用于信息亭应用程序或类似应用程序）。
+
+### Bind
+
+一个包含需要绑定到前端的方法的结构体实例切片。
+
+名称：Bind<br/>
+类型：`[]interface{}`
+
+### ErrorFormatter
+
+一个确定在JS调用Go方法时如何格式化错误的函数。返回的值将被编组为JSON。
+
+名称：ErrorFormatter<br/>
+类型：`func (error) any`
+
+### Windows
+
+这定义了[Windows特定选项](#windows)。
+
+名称：Windows<br/>
+类型：`*windows.Options`
+
+#### WebviewIsTransparent
+
+将此设置为`true`将使Webview背景在使用alpha值为`0`时变为透明。这意味着如果在CSS中使用`rgba(0,0,0,0)`作为`background-color`，则主窗口将显示出来。通常与[WindowIsTranslucent](#WindowIsTranslucent)结合使用，以创建霜冻效果的应用程序。
+
+名称：WebviewIsTransparent<br/>
+类型：`bool`
+
+#### WindowIsTranslucent
+
+将此设置为`true`将使窗口背景半透明。通常与[WebviewIsTransparent](#WebviewIsTransparent)结合使用。
+
+对于Windows 11版本在构建22621之前的版本，这将使用[BlurBehind](https://learn.microsoft.com/en-us/windows/win32/dwm/blur-ovw)方法实现半透明效果，可能会比较慢。对于Windows 11版本在构建22621之后的版本，这将启用更快速的新半透明效果。默认情况下，半透明效果的类型由Windows确定。要配置此选项，请使用[BackdropType](#BackdropType)选项。
+
+名称：WindowIsTranslucent<br/>
+类型：`bool`
+
+#### BackdropType
+
+:::note
+
+需要Windows 11版本构建22621或更高版本。
+
+:::
+
+设置窗口的半透明类型。仅当[WindowIsTranslucent](#WindowIsTranslucent)设置为`true`时才适用。
+
+名称：BackdropType<br/>
+类型：`windows.BackdropType`
+
+可能的值如下：
+
+| 值      | 描述                                                                                   |
+| ------- | -------------------------------------------------------------------------------------- |
+| Auto    | 让Windows决定使用哪种背景效果                                                           |
+| None    | 不使用半透明效果                                                                       |
+| Acrylic | 使用[Acrylic](https://learn.microsoft.com/en-us/windows/apps/design/style/acrylic)效果 |
+| Mica    | 使用[Mica](https://learn.microsoft.com/en-us/windows/apps/design/style/mica)效果       |
+| Tabbed  | 使用Tabbed。这是一种类似于Mica的背景效果。                                               |
+
+#### DisableWindowIcon
+
+将此设置为`true`将删除标题栏左上角的图标。
+
+名称：DisableWindowIcon<br/>
+类型：`bool`
+
+#### DisableFramelessWindowDecorations
+
+将此设置为`true`将删除[无边框](#Frameless)模式下的窗口装饰。这意味着窗口将不会显示'Aero Shadow'和'圆角'。请注意，'圆角'仅在Windows 11上支持。
+
+名称：DisableFramelessWindowDecorations<br/>
+类型：`bool`
+
+#### WebviewUserDataPath
+
+定义WebView2存储用户数据的路径。如果为空，则使用`%APPDATA%\[BinaryName.exe]`。
+
+名称：WebviewUserDataPath<br/>
+类型：`string`
+
+#### WebviewBrowserPath
+
+这定义了一个目录的路径，其中包含WebView2可执行文件和库文件。如果为空，则使用系统中安装的webview2。
+
+关于固定版本运行时分发的重要信息:
+
+- [如何获取和提取运行时](https://docs.microsoft.com/en-us/microsoft-edge/webview2/concepts/distribution#details-about-the-fixed-version-runtime-distribution-mode)
+- [固定版本的已知问题](https://docs.microsoft.com/en-us/microsoft-edge/webview2/concepts/distribution#known-issues-for-fixed-version)
+- [WebView2运行时的路径不应包含\Edge\Application\.](https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/webview2-idl?view=webview2-1.0.1245.22#createcorewebview2environmentwithoptions)
+
+名称：WebviewBrowserPath<br/>
+类型：`string`
+
+#### 主题
+
+最低Windows版本：Windows 10 2004/20H1
+
+这定义了应用程序应使用的主题：
+
+| 值             | 描述                                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| SystemDefault | _默认_. 主题将基于系统默认设置。如果用户更改其主题，应用程序将更新以使用新的设置                                                  |
+| Dark          | 应用程序将仅使用深色主题                                                                                                               |
+| Light         | 应用程序将仅使用亮色主题                                                                                                               |
+
+名称：主题<br/>
+类型：`windows.Theme`
+
+#### CustomTheme
+
+:::note
+
+最低Windows版本：Windows 10/11 2009/21H2 Build 22000
+
+:::
+
+允许您为标题栏、标题文本和边框在亮色和暗色模式下以及窗口处于活动或非活动状态时指定自定义颜色。
+
+名称：CustomTheme<br/>
+类型：`windows.CustomTheme`
+
+##### CustomTheme类型
+
+CustomTheme结构使用`int32`来指定颜色值。这些以标准(!)Windows格式为`0x00BBGGAA`。提供了一个辅助函数，用于将RGB转换为此格式：`windows.RGB(r,g,b uint8)`。
+
+注意：未提供的任何值将默认为黑色。
+
+```go
+type ThemeSettings struct {
+	DarkModeTitleBar           int32
+	DarkModeTitleBarInactive   int32
+	DarkModeTitleText          int32
+	DarkModeTitleTextInactive  int32
+	DarkModeBorder             int32
+	DarkModeBorderInactive     int32
+	LightModeTitleBar          int32
+	LightModeTitleBarInactive  int32
+	LightModeTitleText         int32
+	LightModeTitleTextInactive int32
+	LightModeBorder            int32
+	LightModeBorderInactive    int32
+}
+```
+
+示例：
+
+```go
+    CustomTheme: &windows.ThemeSettings{
+        // 窗口处于活动状态时使用的主题
+        DarkModeTitleBar:   windows.RGB(255, 0, 0),   // 红色
+        DarkModeTitleText:  windows.RGB(0, 255, 0),   // 绿色
+        DarkModeBorder:     windows.RGB(0, 0, 255),   // 蓝色
+        LightModeTitleBar:  windows.RGB(200, 200, 200),
+        LightModeTitleText: windows.RGB(20, 20, 20),
+        LightModeBorder:    windows.RGB(200, 200, 200),
+        // 窗口处于非活动状态时使用的主题
+        DarkModeTitleBarInactive:   windows.RGB(128, 0, 0),
+        DarkModeTitleTextInactive:  windows.RGB(0, 128, 0),
+        DarkModeBorderInactive:     windows.RGB(0, 0, 128),
+        LightModeTitleBarInactive:  windows.RGB(100, 100, 100),
+        LightModeTitleTextInactive: windows.RGB(10, 10, 10),
+        LightModeBorderInactive:    windows.RGB(100, 100, 100),
+    },
+```
+
+#### 消息
+
+如果没有找到有效的webview2运行时，webview2安装程序将使用字符串结构。
+
+名称：Messages<br/>
+类型：`*windows.Messages`
+
+可以根据选择支持的任何语言进行自定义。
+
+#### ResizeDebounceMS
+
+ResizeDebounceMS是调整窗口大小时webview2重新绘制的时间间隔。
+默认值（0）将尽可能快地进行重新绘制。
+
+名称：ResizeDebounceMS<br/>
+类型：`uint16`
+
+#### OnSuspend
+
+如果设置了该函数，当Windows进入低功耗模式（挂起/休眠）时，将调用该函数。
+
+名称：OnSuspend<br/>
+类型：`func()`
+
+#### OnResume
+
+如果设置了该函数，当Windows从低功耗模式（挂起/休眠）恢复时，将调用该函数。
+
+名称：OnResume<br/>
+类型：`func()`
+
+#### WebviewGpuIsDisabled
+
+将其设置为`true`将禁用webview的GPU硬件加速。
+
+名称：WebviewGpuIsDisabled<br/>
+类型：`bool`
+
+### Mac
+
+这定义了[Mac特定选项](#mac)。
+
+名称：Mac<br/>
+类型：`*mac.Options`
+
+#### TitleBar
+
+TitleBar结构提供了配置标题栏外观的能力。
+
+名称：TitleBar<br/>
+类型：[`*mac.TitleBar`](#titlebar-struct)
+
+##### TitleBar结构
+
+可以使用TitleBar选项自定义应用程序的标题栏：
+
+```go
+type TitleBar struct {
+	TitlebarAppearsTransparent bool
+	HideTitle                  bool
+	HideTitleBar               bool
+	FullSizeContent            bool
+	UseToolbar                 bool
+	HideToolbarSeparator       bool
+}
+```
+
+| 名称                       | 描述                                                                                                                                                                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TitlebarAppearsTransparent | 使标题栏透明。这会隐藏标题栏，使内容填充窗口。[Apple文档](https://developer.apple.com/documentation/appkit/nswindow/1419167-titlebarappearstransparent?language=objc)                                                           |
+| HideTitle                  | 隐藏窗口的标题。[Apple文档](https://developer.apple.com/documentation/appkit/nswindowtitlevisibility?language=objc)                                                                                                               |
+| HideTitleBar               | 从样式掩码中删除[NSWindowStyleMaskTitled](https://developer.apple.com/documentation/appkit/nswindowstylemask/nswindowstylemasktitled/)                                                                                             |
+| FullSizeContent            | 使webview填充整个窗口。[Apple文档](https://developer.apple.com/documentation/appkit/nswindowstylemask/nswindowstylemaskfullsizecontentview)                                                                                          |
+| UseToolbar                 | 向窗口添加默认工具栏。[Apple文档](https://developer.apple.com/documentation/appkit/nstoolbar?language=objc)                                                                                                                     |
+| HideToolbarSeparator       | 删除工具栏下方的分隔线。[Apple文档](https://developer.apple.com/documentation/appkit/nstoolbar/1516954-showsbaselineseparator?language=objc)                                                                                          |
+
+预配置的标题栏设置可用：
+
+| 设置                     | 示例                                          |
+| --------------------------- | ---------------------------------------------- |
+| `mac.TitleBarDefault()`     | ![](/img/reference/titlebar-default.webp)      |
+| `mac.TitleBarHidden()`      | ![](/img/reference/titlebar-hidden.webp)       |
+| `mac.TitleBarHiddenInset()` | ![](/img/reference/titlebar-hidden-inset.webp) |
+
+示例：
+
+```go
+Mac: &mac.Options{
+	TitleBar:     mac.TitleBarHiddenInset(),
+}
+```
+
+点击[这里](https://github.com/lukakerr/NSWindowStyles)获取一些自定义标题栏的灵感。
+
+#### 外观
+
+外观用于根据苹果的[NSAppearance](https://developer.apple.com/documentation/appkit/nsappearancename?language=objc)名称设置应用程序的样式。
+
+名称：Appearance<br/>
+类型：[`mac.AppearanceType`](#appearance-type)
+
+#### 外观类型
+
+您可以指定应用程序的[外观](https://developer.apple.com/documentation/appkit/nsappearance?language=objc)。
+
+| 值                                                        | 描述                                                           |
+| -------------------------------------------------------- | ------------------------------------------------------------- |
+| DefaultAppearance                                        | DefaultAppearance 使用默认系统值                                |
+| NSAppearanceNameAqua                                     | 标准浅色系统外观                                               |
+| NSAppearanceNameDarkAqua                                 | 标准深色系统外观                                               |
+| NSAppearanceNameVibrantLight                             | 亮色鲜艳外观                                                   |
+| NSAppearanceNameAccessibilityHighContrastAqua            | 标准浅色高对比度系统外观                                         |
+| NSAppearanceNameAccessibilityHighContrastDarkAqua        | 标准深色高对比度系统外观                                         |
+| NSAppearanceNameAccessibilityHighContrastVibrantLight    | 亮色鲜艳高对比度外观                                             |
+| NSAppearanceNameAccessibilityHighContrastVibrantDark     | 深色鲜艳高对比度外观                                             |
+
+示例：
+
+```go
+Mac: &mac.Options{
+    Appearance: mac.NSAppearanceNameDarkAqua,
+}
+```
+
+#### WebviewIsTransparent
+
+将此设置为`true`将使Web视图的背景在使用`0`的alpha值时变为透明。
+这意味着如果在CSS中使用`rgba(0,0,0,0)`作为`background-color`，则主窗口将显示出来。
+通常与[WindowIsTranslucent](#WindowIsTranslucent)一起使用，以创建霜冻效果的应用程序。
+
+名称：WebviewIsTransparent<br/>
+类型：`bool`
+
+#### WindowIsTranslucent
+
+将此设置为`true`将使窗口背景半透明。通常与[WebviewIsTransparent](#WebviewIsTransparent)一起使用，以创建霜冻效果的应用程序。
+
+名称：WindowIsTranslucent<br/>
+类型：`bool`
+
+#### About
+
+此配置允许您为“关于”菜单项设置标题、消息和图标，该菜单项位于“AppMenu”角色创建的应用程序菜单中。
+
+名称：About<br/>
+类型：[`*mac.AboutInfo`](#about-struct)
+
+##### About结构
+
+```go
+
+type AboutInfo struct {
+	Title   string
+	Message string
+	Icon    []byte
+}
+```
+
+如果提供了这些设置，将在应用程序菜单中出现“关于”菜单项（使用`AppMenu`角色时）。
+给定此配置：
+
+```go
+//go:embed build/appicon.png
+var icon []byte
+
+func main() {
+	err := wails.Run(&options.App{
+	    ...
+        Mac: &mac.Options{
+            About: &mac.AboutInfo{
+                Title:   "My Application",
+                Message: "© 2021 Me",
+                Icon:    icon,
+            },
+        },
+    })
+```
+
+“关于”菜单项将出现在应用程序菜单中：
+
+```mdx-code-block
+<div class="text--center">
+  <img
+    src={require("@site/static/img/reference/about-menu.webp").default}
+    class="screenshot"
+  />
+</div>
+<br />
+```
+
+单击该菜单项将打开一个关于消息框：
+
+```mdx-code-block
+<div class="text--center">
+  <img
+    src={require("@site/static/img/reference/about-dialog.webp").default}
+    width="40%"
+    class="screenshot"
+  />
+</div>
+<br />
+```
+
+### Linux
+
+这定义了[Linux特定选项](#linux)。
+
+名称：Linux<br/>
+类型：`*linux.Options`
+
+#### 图标
+
+设置表示窗口的图标。当窗口最小化（也称为图标化）时使用此图标。
+
+名称：图标<br/>
+类型：`[]byte`
+
+某些窗口管理器或桌面环境可能还会将其放置在窗口框架中，或在其他上下文中显示它。
+在其他情况下，图标根本不会被使用，所以效果可能因环境而异。
+
+注意：至少在Wayland上的Gnome不显示此图标。要在那里拥有一个应用程序图标，必须使用`.desktop`文件。
+在KDE上应该可以工作。
+
+图标应该提供在自然绘制时的大小；也就是说，在传递之前不要缩放图像。
+缩放会在最后一刻推迟进行，当知道所需的最终大小时，以获得最佳质量。
+
+#### 窗口半透明
+
+将此设置为`true`将使窗口背景半透明。某些窗口管理器可能会忽略它，或导致窗口变黑。
+
+名称：窗口半透明<br/>
+类型：`bool`
+
+#### Webview硬件加速策略
+
+此选项用于确定webview的硬件加速策略。
+
+名称：Webview硬件加速策略<br/>
+类型：[`options.WebviewGpuPolicy`](#webviewgpupolicy-type)<br/>
+默认值：`WebviewGpuPolicyAlways`
+
+##### Webview硬件加速策略类型
+
+| 值                    | 描述 |
+| -------------------------| ----------- |
+| WebviewGpuPolicyAlways   | 总是启用硬件加速|
+| WebviewGpuPolicyOnDemand | 根据Web内容的请求启用/禁用硬件加速|
+| WebviewGpuPolicyNever    | 总是禁用硬件加速 |
+
+### 调试
+
+这定义了适用于调试构建的[调试特定选项](#Debug)。
+
+名称：调试<br/>
+类型：`options.Debug`
+
+#### 启动时打开Web检查器
+
+将此设置为`true`将在应用程序启动时打开Web检查器。
+
+名称：启动时打开Web检查器<br/>
+类型：`bool`

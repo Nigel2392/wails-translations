@@ -1,0 +1,221 @@
+# 应用程序开发
+
+在使用Wails开发应用程序时，没有固定的规则，但有一些基本的指导原则。
+
+## 应用程序设置
+
+默认模板使用`main.go`用于配置和运行应用程序，而`app.go`用于定义应用程序逻辑。
+
+`app.go`文件将定义一个结构体，其中有两个方法作为主应用程序的钩子：
+
+```go title="app.go"
+type App struct {
+	ctx context.Context
+}
+
+func NewApp() *App {
+	return &App{}
+}
+
+func (a *App) startup(ctx context.Context) {
+	a.ctx = ctx
+}
+
+func (a *App) shutdown(ctx context.Context) {
+}
+```
+
+- `startup`方法在Wails分配所需资源后立即调用，是创建资源、设置事件监听器和其他应用程序在启动时需要的任何事物的好地方。
+  它接收一个`context.Context`，通常保存在结构体字段中。此上下文用于调用[runtime](../reference/runtime/intro.mdx)。如果此方法返回错误，则应用程序将终止。
+  在开发模式下，错误将输出到控制台。
+
+- `shutdown`方法将在关闭过程的最后被Wails调用。这是一个好地方来释放内存和执行任何关闭任务。
+
+`main.go`文件通常只包含对`wails.Run()`的一个调用，它接受应用程序配置。模板使用的模式是，在调用`wails.Run()`之前，创建一个在`app.go`中定义的结构体实例，并将其保存在名为`app`的变量中。这个配置是我们添加回调函数的地方：
+
+```go {3,9,10} title="main.go"
+func main() {
+
+	app := NewApp()
+
+	err := wails.Run(&options.App{
+		Title:             "My App",
+		Width:             800,
+		Height:            600,
+		OnStartup:  app.startup,
+		OnShutdown: app.shutdown,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+```
+
+有关应用程序生命周期钩子的更多信息可以在[这里](../howdoesitwork.mdx#application-lifecycle-callbacks)找到。
+
+## 绑定方法
+
+您可能希望从前端调用Go方法。通常，这是通过向`app.go`中已定义的结构体添加公共方法来完成的：
+
+```go {16-18} title="app.go"
+type App struct {
+	ctx context.Context
+}
+
+func NewApp() *App {
+	return &App{}
+}
+
+func (a *App) startup(ctx context.Context) {
+	a.ctx = ctx
+}
+
+func (a *App) shutdown(ctx context.Context) {
+}
+
+func (a *App) Greet(name string) string {
+    return fmt.Sprintf("Hello %s!", name)
+}
+```
+
+在主应用程序配置中，`Bind`关键字用于告诉Wails我们想要绑定什么：
+
+```go {11-13} title="main.go"
+func main() {
+
+	app := NewApp()
+
+	err := wails.Run(&options.App{
+		Title:             "My App",
+		Width:             800,
+		Height:            600,
+		OnStartup:  app.startup,
+		OnShutdown: app.shutdown,
+        Bind: []interface{}{
+            app,
+        },
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+```
+
+这将绑定我们`App`结构体中的所有公共方法（不会绑定startup和shutdown方法）。
+
+### 绑定多个结构体时处理上下文
+
+如果您想为多个结构体绑定方法，但希望每个结构体保留对上下文的引用，以便可以使用runtime函数，一个好的模式是将上下文从`OnStartup`方法传递给结构体实例：
+
+```go
+func main() {
+
+	app := NewApp()
+	otherStruct := NewOtherStruct()
+
+	err := wails.Run(&options.App{
+		Title:             "My App",
+		Width:             800,
+		Height:            600,
+		OnStartup:  func(ctx context.Context){
+			app.SetContext(ctx)
+			otherStruct.SetContext(ctx)
+		},
+		OnShutdown: app.shutdown,
+        Bind: []interface{}{
+            app,
+			otherStruct,
+        },
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+有关绑定的更多信息可以在[这里](../howdoesitwork.mdx#method-binding)找到。
+
+## 应用程序菜单
+
+Wails支持为应用程序添加菜单。通过将[Menu](../reference/menus.mdx#menu)结构体传递给应用程序配置来完成。通常，使用返回菜单的方法，并且通常该方法是用于生命周期钩子的`App`结构体的方法。
+
+```go {11} title="main.go"
+func main() {
+
+	app := NewApp()
+
+	err := wails.Run(&options.App{
+		Title:             "My App",
+		Width:             800,
+		Height:            600,
+		OnStartup:  app.startup,
+		OnShutdown: app.shutdown,
+		Menu:       app.menu(),
+        Bind: []interface{}{
+            app,
+        },
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+```
+
+## 资源
+
+Wails v2处理资源的方式非常棒，因为它几乎不处理资源！你只需要给Wails一个`embed.FS`即可。你可以像使用原始模板一样使用原始的html/css/js文件。你可以有一些复杂的构建系统，这都没有关系。
+
+当运行`wails build`时，它将检查项目根目录下的`wails.json`项目文件。项目文件中读取到了两个键：
+
+- "frontend:install"
+- "frontend:build"
+
+如果给出了第一个键，则将在`frontend`目录中执行该命令以安装node模块。
+如果给出了第二个键，则将在`frontend`目录中执行该命令以构建前端项目。
+
+如果没有给出这两个键，则Wails不会对前端进行任何操作。它只期望`embed.FS`。
+
+### AssetsHandler
+
+Wails v2应用程序可以在`options.App`中可选地定义一个`http.Handler`，它允许在AssetServer中创建文件或处理POST/PUT请求。
+GET请求总是首先由`assets` FS处理。如果FS找不到请求的文件，则该请求将被转发给`http.Handler`进行处理。其他除GET之外的请求将由`AssetsHandler`直接处理（如果指定）。
+还可以通过将`Assets`选项指定为`nil`来仅使用`AssetsHandler`。
+
+## 内置开发服务器
+
+运行`wails dev`将启动内置的开发服务器，它将在项目目录中启动一个文件监视器。默认情况下，如果有任何文件更改，Wails会检查它是否是应用程序文件（默认为`.go`，可以使用`-e`标志进行配置）。
+如果是应用程序文件，则会重新构建应用程序并重新启动。如果更改的文件是在资源中，则会在短时间后发出重新加载的命令。
+
+开发服务器使用了一种称为“去抖动”的技术，这意味着它不会立即重新加载，因为在短时间内可能会有多个文件更改。当触发器发生时，它会等待一定的时间，然后发出重新加载命令。如果发生另一个触发器，它会再次重置等待时间。默认情况下，这个值是`100ms`。如果这个值对您的项目不起作用，可以使用`-debounce`标志进行配置。如果使用了这个标志，这个值将保存到您的项目配置中，并成为默认值。
+
+## 外部开发服务器
+
+有些框架自带自己的实时重新加载服务器，但是它们将无法利用Wails的Go绑定。在这种情况下，最好运行一个监视脚本，将项目重建到Wails将要监视的构建目录中。例如，请参阅默认的svelte模板，它使用[rollup](https://rollupjs.org/guide/en/)。
+
+### 创建React App
+
+Create-React-App项目的流程稍微复杂一些。为了支持前端的实时重新加载，需要在`wails.json`中添加以下配置：
+
+```json
+  "frontend:dev:watcher": "yarn start",
+  "frontend:dev:serverUrl": "http://localhost:3000"
+```
+
+`frontend:dev:watcher`命令将启动Create-React-App开发服务器（通常在端口`3000`上）。`frontend:dev:serverUrl`命令指示Wails在加载前端时从开发服务器而不是从构建文件夹中提供资源。除了上述配置之外，还需要更新`index.html`：
+
+```html
+	<head>
+		<meta name="wails-options" content="noautoinject" />
+		<script src="/wails/ipc.js"></script>
+		<script src="/wails/runtime.js"></script>
+	</head>
+```
+
+这是必需的，因为重建前端的观察者命令会阻止Wails注入所需的脚本。通过确保始终注入脚本来解决这个问题。使用此配置，可以运行`wails dev`，该命令将启动具有启用热重载的前端和后端的构建。此外，在浏览器中访问应用程序时，React开发者工具现在可以在非压缩的应用程序版本上使用，以便进行简单的调试。最后，为了加快构建速度，可以运行`wails dev -s`来跳过Wails默认构建前端的步骤，因为这是一个不必要的步骤。
+
+## Go模块
+
+默认的Wails模板生成了一个`go.mod`文件，其中包含模块名称"changeme"。在项目生成后，您应该将其更改为更合适的名称。

@@ -1,0 +1,134 @@
+# 日志
+
+Wails运行时提供了一个可以从Go或JavaScript中调用的日志机制。和大多数日志记录器一样，有几个不同的日志级别：
+
+- Trace
+- Debug
+- Info
+- Warning
+- Error
+- Fatal
+
+日志记录器会输出当前日志级别或更高级别的所有日志消息。例如：`Debug`日志级别会输出除了`Trace`消息之外的所有消息。
+
+### LogPrint
+
+将给定的消息作为原始消息进行记录。
+
+Go：`LogPrint(ctx context.Context, message string)`<br/>
+JS：`LogPrint(message: string)`
+
+### LogPrintf
+
+将给定的消息作为原始消息进行记录。
+
+Go：`LogPrintf(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogTrace
+
+以`Trace`日志级别记录给定的消息。
+
+Go：`LogTrace(ctx context.Context, message string)`<br/>
+JS：`LogTrace(message: string)`
+
+### LogTracef
+
+以`Trace`日志级别记录给定的消息。
+
+Go：`LogTracef(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogDebug
+
+以`Debug`日志级别记录给定的消息。
+
+Go：`LogDebug(ctx context.Context, message string)`<br/>
+JS：`LogDebug(message: string)`
+
+### LogDebugf
+
+以 `Debug` 日志级别记录给定的消息。
+
+Go: `LogDebugf(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogInfo
+
+以 `Info` 日志级别记录给定的消息。
+
+Go: `LogInfo(ctx context.Context, message string)`<br/>
+JS: `LogInfo(message: string)`
+
+### LogInfof
+
+以 `Info` 日志级别记录给定的消息。
+
+Go: `LogInfof(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogWarning
+
+以 `Warning` 日志级别记录给定的消息。
+
+Go: `LogWarning(ctx context.Context, message string)`<br/>
+JS: `LogWarning(message: string)`
+
+### LogWarningf
+
+以 `Warning` 日志级别记录给定的消息。
+
+Go: `LogWarningf(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogError
+
+以 `Error` 日志级别记录给定的消息。
+
+Go: `LogError(ctx context.Context, message string)`<br/>
+JS: `LogError(message: string)`
+
+### LogErrorf
+
+以 `Error` 日志级别记录给定的消息。
+
+Go: `LogErrorf(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogFatal
+
+以 `Fatal` 日志级别记录给定的消息。
+
+Go: `LogFatal(ctx context.Context, message string)`<br/>
+JS: `LogFatal(message: string)`
+
+### LogFatalf
+
+以 `Fatal` 日志级别记录给定的消息。
+
+Go: `LogFatalf(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogSetLogLevel
+
+设置日志级别。在 JavaScript 中，数字与以下日志级别相关联：
+
+| 值   | 日志级别   |
+| ---- | ---------- |
+| 1    | Trace      |
+| 2    | Debug      |
+| 3    | Info       |
+| 4    | Warning    |
+| 5    | Error      |
+
+Go: `LogSetLogLevel(ctx context.Context, level logger.LogLevel)`<br/>
+JS: `LogSetLogLevel(level: number)`
+
+## 使用自定义日志记录器
+
+可以通过使用 [Logger](../options.mdx#logger) 应用选项来提供自定义日志记录器。唯一的要求是该日志记录器实现了 `logger.Logger` 接口，该接口定义在 `github.com/wailsapp/wails/v2/pkg/logger` 中：
+
+```go title="logger.go"
+type Logger interface {
+	Print(message string)
+	Trace(message string)
+	Debug(message string)
+	Info(message string)
+	Warning(message string)
+	Error(message string)
+	Fatal(message string)
+}
+```

@@ -1,0 +1,85 @@
+# Visual Studio Code
+
+Deze pagina bevat diverse tips en trucs voor het gebruik van Visual Studio Code met Wails.
+
+## Vetur-configuratie
+
+Veel dank aan [@Lyimmi](https://github.com/Lyimmi) voor deze tip. Oorspronkelijk geplaatst 
+[hier](https://github.com/wailsapp/wails/issues/1791#issuecomment-1228158349).
+
+Vetur is een populaire plug-in voor Visual Studio Code die syntaxmarkering en code-aanvulling biedt
+voor Vue-projecten. Wanneer u een Wails-project laadt in VSCode, zal Vetur een foutmelding geven omdat het verwacht
+het frontend-project in de hoofdmap te vinden. Om dit op te lossen, kunt u het volgende doen:
+
+Maak een bestand genaamd `vetur.config.js` in de hoofdmap van het project.
+
+```javascript
+// vetur.config.js
+/** @type {import('vls').VeturConfig} */
+module.exports = {
+    // **optioneel** standaard: `{}`
+    // overschrijf vscode-instellingen
+    // Opmerking: dit heeft alleen invloed op de instellingen die door Vetur worden gebruikt.
+    settings: {
+        "vetur.useWorkspaceDependencies": true,
+        "vetur.experimental.templateInterpolationService": true
+    },
+    // **optioneel** standaard: `[{ root: './' }]`
+    // ondersteuning voor monorepos
+    projects: [
+        {
+            // **vereist**
+            // Waar is uw project?
+            // Het is relatief ten opzichte van `vetur.config.js`.
+            // root: './packages/repo1',
+            root: './frontend',
+            // **optioneel** standaard: `'package.json'`
+            // Waar bevindt zich `package.json` in het project?
+            // We gebruiken het om de versie van Vue te bepalen.
+            // Het is relatief ten opzichte van de root-eigenschap.
+            package: './package.json',
+            // **optioneel**
+            // Waar bevindt zich het TypeScript-configuratiebestand in het project?
+            // Het is relatief ten opzichte van de root-eigenschap.
+            tsconfig: './tsconfig.json',
+            // **optioneel** standaard: `'./.vscode/vetur/snippets'`
+            // Waar bevinden zich de aangepaste Vetur-snippetmappen?
+            snippetFolder: './.vscode/vetur/snippets',
+            // **optioneel** standaard: `[]`
+            // Registreer wereldwijd Vue-componentglob.
+            // Als je het instelt, kun je automatisch aanvullen krijgen voor die componenten.
+            // Het is relatief ten opzichte van de root-eigenschap.
+            // Opmerking: dit zal het in werkelijkheid niet doen. U moet `require.context` of `Vue.component` gebruiken
+            globalComponents: [
+                './src/components/**/*.vue'
+            ]
+        }
+    ]
+}
+```
+
+Configureer vervolgens `frontend/tsconfig.json`:
+
+```javascript
+{
+  "compilerOptions": {
+    "module": "system",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "outFile": "../../built/local/tsc.js",
+    "allowJs": true
+  },
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ],
+  "include": [
+    "src/**/*",
+    "wailsjs/**/*.ts"
+  ]
+}
+```
+
+Hiermee zou u Vetur nu zoals verwacht moeten kunnen gebruiken.

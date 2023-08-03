@@ -1,0 +1,129 @@
+# IDE's
+
+Wails streeft ernaar om een geweldige ontwikkelervaring te bieden. Met dat doel ondersteunen we nu het genereren van IDE-specifieke configuratie om een soepelere projectopzet te bieden.
+
+Op dit moment ondersteunen we [Visual Studio Code](https://code.visualstudio.com/), maar we streven ernaar om andere IDE's zoals Goland te ondersteunen.
+
+## Visual Studio Code
+
+```mdx-code-block
+<p className="text--center">
+  <img
+    src={require("@site/static/img/vscode.webp").default}
+    style={{ width: "75%" }}
+  />
+</p>
+```
+
+Bij het genereren van een project met de `-ide vscode` vlag worden IDE-bestanden naast de andere projectbestanden aangemaakt.
+Deze bestanden worden geplaatst in de `.vscode` directory en bieden de juiste configuratie voor het debuggen van uw applicatie.
+
+De 2 gegenereerde bestanden zijn `tasks.json` en `launch.json`. Hieronder staan de gegenereerde bestanden voor het standaard vanilla project:
+
+```json title="tasks.json"
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "go",
+      "args": [
+        "build",
+        "-tags",
+        "dev",
+        "-gcflags",
+        "all=-N -l",
+        "-o",
+        "build/bin/myproject.exe"
+      ]
+    }
+  ]
+}
+```
+
+```json title="launch.json"
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Wails: Debug myproject",
+      "type": "go",
+      "request": "launch",
+      "mode": "exec",
+      "program": "${workspaceFolder}/build/bin/myproject.exe",
+      "preLaunchTask": "build",
+      "cwd": "${workspaceFolder}",
+      "env": {}
+    }
+  ]
+}
+```
+
+### Configuratie van de installatie- en build-stappen
+
+Het `tasks.json` bestand is eenvoudig voor het standaard project, omdat er geen `npm install` of `npm run build` stap nodig is.
+Voor projecten die een frontend build-stap hebben, zoals het svelte template, moeten we `tasks.json` bewerken om de installatie- en build-stappen toe te voegen:
+
+```json title="tasks.json"
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "npm install",
+      "type": "npm",
+      "script": "install",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "presentation": {
+        "clear": true,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "npm run build",
+      "type": "npm",
+      "script": "build",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "presentation": {
+        "clear": true,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "go",
+      "args": [
+        "build",
+        "-tags",
+        "dev",
+        "-gcflags",
+        "all=-N -l",
+        "-o",
+        "build/bin/vscode.exe"
+      ],
+      "dependsOn": ["npm install", "npm run build"]
+    }
+  ]
+}
+```
+
+:::info Toekomstige verbetering
+
+In de toekomst hopen we automatisch een `tasks.json` te genereren die de installatie- en build-stappen bevat.
+
+:::

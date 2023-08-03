@@ -1,0 +1,246 @@
+---
+sidebar_position: 20
+---
+
+# API des chiens
+
+```mdx-code-block
+<div class="text--center">
+  <img
+    src={require("@site/static/img/tutorials/dogsapi/img.webp").default}
+    width="50%"
+    className="screenshot"
+  />
+</div>
+<br />
+```
+
+:::note
+
+Ce tutoriel a été aimablement fourni par [@tatadan](https://twitter.com/tatadan) et fait partie du
+leur [Dépôt d'exemples Wails](https://github.com/tataDan/wails-v2-examples).
+
+:::
+
+Dans ce tutoriel, nous allons développer une application qui récupère des photos de chiens sur le web
+et les affiche ensuite.
+
+### Créer le projet
+
+Créons l'application. À partir d'un terminal, saisissez :
+`wails init -n dogs-api -t svelte`
+
+Remarque : Nous pourrions éventuellement ajouter `-ide vscode` ou `-ide goland` à la fin de cette commande si vous souhaitez
+ajouter une prise en charge de l'IDE.
+
+Maintenant, allons dans `cd dogs-api` et commençons à modifier les fichiers du projet.
+
+### Supprimer le code inutilisé
+
+Nous allons commencer par supprimer certains éléments que nous savons que nous n'utiliserons pas :
+
+- Ouvrez `app.go` et supprimez les lignes suivantes :
+
+```go
+// Greet returns a greeting for the given name
+func (a *App) Greet(name string) string {
+	return fmt.Sprintf("Hello %s, It's show time!", name)
+}
+```
+
+- Ouvrez `frontend/src/App.svelte` et supprimez toutes les lignes.
+- Supprimez le fichier `frontend/src/assets/images/logo-universal.png`
+
+### Création de notre application
+
+Ajoutons maintenant notre nouveau code Go.
+
+Ajoutez les déclarations de structure suivantes à `app.go` avant les définitions de fonction :
+
+type RandomImage struct {
+	Message string
+	Status  string
+}
+
+type AllBreeds struct {
+	Message map[string]map[string][]string
+	Status  string
+}
+
+type ImagesByBreed struct {
+	Message []string
+	Status  string
+}
+
+Ajoutez les fonctions suivantes à `app.go` (peut-être après les définitions de fonctions existantes):
+
+```go
+func (a *App) GetRandomImageUrl() string {
+	response, err := http.Get("https://dog.ceo/api/breeds/image/random")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var data RandomImage
+	json.Unmarshal(responseData, &data)
+
+	return data.Message
+}
+
+func (a *App) GetBreedList() []string {
+	var breeds []string
+
+	response, err := http.Get("https://dog.ceo/api/breeds/list/all")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var data AllBreeds
+	json.Unmarshal(responseData, &data)
+
+	for k := range data.Message {
+		breeds = append(breeds, k)
+	}
+
+	sort.Strings(breeds)
+
+	return breeds
+}
+
+func (a *App) GetImageUrlsByBreed(breed string) []string {
+
+	url := fmt.Sprintf("%s%s%s%s", "https://dog.ceo/api/", "breed/", breed, "/images")
+	response, err := http.Get(url)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var data ImagesByBreed
+	json.Unmarshal(responseData, &data)
+
+	return data.Message
+}
+```
+
+Modifiez la section `import` de `app.go` pour ressembler à ceci:
+
+```go
+import (
+	"context"
+	"fmt"
+	"encoding/json"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"sort"
+)
+```
+
+Ajoutez les lignes suivantes à `frontend/src/App.svelte` :
+
+<!-- prettier-ignore-start -->
+```html
+<script>
+  import { GetRandomImageUrl } from "../wailsjs/go/main/App.js";
+  import { GetBreedList } from "../wailsjs/go/main/App.js";
+  import { GetImageUrlsByBreed } from "../wailsjs/go/main/App.js";
+
+  let randomImageUrl = "";
+  let breeds = [];
+  let photos = [];
+  let selectedBreed;
+  let showRandomPhoto = false;
+  let showBreedPhotos = false;
+
+  function init() {
+    getBreedList();
+  }
+
+  init();
+
+  function getRandomImageUrl() {
+    showRandomPhoto = false;
+    showBreedPhotos = false;
+    GetRandomImageUrl().then((result) => (randomImageUrl = result));
+    showRandomPhoto = true;
+  }
+
+  function getBreedList() {
+    GetBreedList().then((result) => (breeds = result));
+  }
+
+  function getImageUrlsByBreed() {
+    init();
+    showRandomPhoto = false;
+    showBreedPhotos = false;
+    GetImageUrlsByBreed(selectedBreed).then((result) => (photos = result));
+    showBreedPhotos = true;
+  }
+</script>
+
+<h3>API des chiens</h3>
+<div>
+  <button class="btn" on:click={getRandomImageUrl}>
+    Obtenir une image de chien au hasard
+  </button>
+  Cliquez sur la flèche vers le bas pour sélectionner une race
+  <select bind:value={selectedBreed}>
+    {#each breeds as breed}
+      <option value={breed}>
+        {breed}
+      </option>
+    {/each}
+  </select>
+  <button class="btn" on:click={getImageUrlsByBreed}>
+    Obtenir par cette race
+  </button>
+</div>
+<br />
+{#if showRandomPhoto}
+  <img id="random-photo" src={randomImageUrl} alt="Aucun chien trouvé" />
+{/if}
+{#if showBreedPhotos}
+  {#each photos as photo}
+    <img id="breed-photos" src={photo} alt="Aucun chien trouvé" />
+  {/each}
+{/if}
+
+<style>
+  #random-photo {
+    width: 600px;
+    height: auto;
+  }
+
+  #breed-photos {
+    width: 300px;
+    height: auto;
+  }
+
+  .btn:focus {
+    border-width: 3px;
+  }
+</style>
+```
+
+### Tester l'application
+
+Pour générer les liaisons et tester l'application, exécutez `wails dev`.
+
+### Compiler l'application
+
+Pour compiler l'application en un seul fichier binaire de qualité de production, exécutez `wails build`.

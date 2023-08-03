@@ -1,0 +1,239 @@
+# CLI
+
+Le CLI de Wails dispose de plusieurs commandes utilisées pour gérer vos projets. Toutes les commandes sont exécutées de la manière suivante :
+
+`wails <commande> <options>`
+
+## init
+
+`wails init` est utilisé pour générer des projets.
+
+| Option            | Description                                                                                                             |       Par défaut       |
+| :----------------- | :---------------------------------------------------------------------------------------------------------------------- | :-------------------: |
+| -n "nom du projet" | Nom du projet. **Obligatoire**.                                                                                         |                       |
+| -d "répertoire"    | Répertoire du projet à créer                                                                                             | Nom du projet         |
+| -g                 | Initialiser le dépôt git                                                                                                |                       |
+| -l                 | Lister les modèles de projet disponibles                                                                                |                       |
+| -q                 | Supprimer la sortie dans la console                                                                                      |                       |
+| -t "nom du modèle" | Le modèle de projet à utiliser. Il peut s'agir du nom d'un modèle par défaut ou d'une URL vers un modèle distant hébergé sur Github. |       vanilla       |
+| -ide               | Générer les fichiers de projet IDE                                                                                       |                       |
+| -f                 | Forcer la construction de l'application                                                                                 |        false          |
+
+Exemple:
+`wails init -n test -d mytestproject -g -ide vscode -q`
+
+Cela générera un projet appelé "test" dans le répertoire "mytestproject", initialisera git,
+générera des fichiers de projet vscode et le fera en silence.
+
+Plus d'informations sur l'utilisation des IDE avec Wails peuvent être trouvées [ici](../guides/ides.mdx).
+
+### Modèles distants
+
+Les modèles distants (hébergés sur GitHub) sont pris en charge et peuvent être installés en utilisant l'URL du projet du modèle.
+
+Exemple:
+`wails init -n test -t https://github.com/leaanthony/testtemplate[@v1.0.0]`
+
+Une liste de modèles maintenus par la communauté peut être trouvée [ici](../community/templates.mdx)
+
+:::warning Attention
+
+**Le projet Wails ne maintient pas et n'est pas responsable des modèles tiers!**
+
+Si vous n'êtes pas sûr d'un modèle, inspectez `package.json` et `wails.json` pour voir quels scripts sont exécutés et quels packages sont installés.
+
+:::
+
+## build
+
+`wails build` est utilisé pour compiler votre projet en un binaire prêt pour la production.
+
+| Drapeau               | Description                                                                                                                                                                 | Valeur par défaut                                                                                                                                       |
+|:---------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------|
+| -clean               | Nettoie le répertoire `build/bin`                                                                                                                                            |                                                                                                                                               |
+| -compiler "compiler" | Utilise un compilateur Go différent pour la construction, par exemple go1.15beta1                                                                                                                        | go                                                                                                                                            |
+| -debug               | Conserve les informations de débogage dans l'application et affiche la console de débogage. Permet l'utilisation des outils de développement dans la fenêtre de l'application                                          |                                                                                                                                               |
+| -devtools            | Permet l'utilisation des outils de développement dans la fenêtre de l'application en production (lorsque -debug n'est pas utilisé)                                                                            |                                                                                                                                               |
+| -dryrun              | Affiche la commande de construction sans l'exécuter                                                                                                                               |                                                                                                                                               |
+| -f                   | Force la construction de l'application                                                                                                                                                     |                                                                                                                                               |
+| -garbleargs          | Arguments à transmettre à garble                                                                                                                                                 | `-literals -tiny -seed=random`                                                                                                                |
+| -ldflags "flags"     | ldflags supplémentaires à transmettre au compilateur                                                                                                                                  |                                                                                                                                               |
+| -m                   | Ignore le nettoyage du module avant la compilation                                                                                                                                                |                                                                                                                                               |
+| -nopackage           | Ne pas empaqueter l'application                                                                                                                                                  |                                                                                                                                               |
+| -nocolour            | Désactive la couleur dans la sortie                                                                                                                                                    |                                                                                                                                               |
+| -nosyncgomod         | Ne synchronise pas go.mod avec la version de Wails                                                                                                                                   |                                                                                                                                               |
+| -nsis                | Génère un installateur NSIS pour Windows                                                                                                                                         |                                                                                                                                               |
+| -o filename          | Nom du fichier de sortie                                                                                                                                                             |                                                                                                                                               |
+| -obfuscated          | Obfusque l'application en utilisant [garble](https://github.com/burrowers/garble)                                                                                               |                                                                                                                                               |
+| -platform            | Construit pour les plates-formes données (séparées par des virgules) [platforms](../reference/cli.mdx#platforms) par exemple `windows/arm64`. Remarque : si vous ne spécifiez pas l'architecture, `runtime.GOARCH` est utilisé. | platform = variable d'environnement `GOOS` si elle est fournie, sinon `runtime.GOOS`.<br/>arch = variable d'environnement `GOARCH` si elle est fournie, sinon `runtime.GOARCH`. |
+| -race                | Construit avec le détecteur de courses Go                                                                                                                                             |                                                                                                                                               |
+| -s                   | Ignore la construction de la partie frontend                                                                                                                                                  |                                                                                                                                               |
+| -skipbindings        | Ignore la génération des bindings                                                                                                                                                    |                                                                                                                                               |
+| -tags "extra tags"   | Balises de construction à passer au compilateur Go. Doit être entre guillemets. Séparées par un espace ou une virgule (mais pas les deux)                                                                                  |                                                                                                                                               |
+| -trimpath            | Supprime tous les chemins du système de fichiers du binaire résultant.                                                                                                                 |                                                                                                                                               |
+| -u                   | Met à jour le fichier `go.mod` de votre projet pour utiliser la même version de Wails que le CLI                                                                                                 |                                                                                                                                               |
+| -upx                 | Compresse le binaire final à l'aide de "upx"                                                                                                                                           |                                                                                                                                               |
+| -upxflags            | Drapeaux à transmettre à upx                                                                                                                                                        |                                                                                                                                               |
+| -v int               | Niveau de verbosité (0 - silencieux, 1 - par défaut, 2 - verbeux)                                                                                                                      | 1                                                                                                                                             |
+| -webview2            | Stratégie d'installation de WebView2 : download,embed,browser,error                                                                                                                   | download                                                                                                                                      |
+| -windowsconsole      | Conserve la fenêtre de console pour les constructions Windows                                                                                                                                  |                                                                                                                                               |
+
+Pour une description détaillée du drapeau `webview2`, veuillez vous référer au Guide [Windows](../guides/windows.mdx).
+
+Si vous préférez construire en utilisant les outils Go standards, veuillez consulter le guide [Builds Manuels](../guides/manual-builds.mdx).
+
+Exemple :
+
+`wails build -clean -o myproject.exe`
+
+:::info
+
+Sur Mac, l'application sera regroupée avec `Info.plist`, pas `Info.dev.plist`.
+
+:::
+
+:::info UPX sur Apple Silicon
+
+Il y a des problèmes avec l'utilisation de UPX sur Apple Silicon. [issues](https://github.com/upx/upx/issues/446).
+
+:::
+
+:::info UPX sur Windows
+
+Certains fournisseurs d'antivirus marquent faussement les binaires compressés `upx` comme des virus, voir [problème](https://github.com/upx/upx/issues/437).
+
+:::
+
+### Plateformes
+
+Les plateformes prises en charge sont :
+
+| Plateforme       | Description                                     |
+| :--------------- | :---------------------------------------------- |
+| darwin           | MacOS + architecture de la machine de construction |
+| darwin/amd64     | MacOS 10.13+ AMD64                              |
+| darwin/arm64     | MacOS 11.0+ ARM64                               |
+| darwin/universal | Application universelle MacOS AMD64+ARM64       |
+| windows          | Windows 10/11 + architecture de la machine de construction |
+| windows/amd64    | Windows 10/11 AMD64                             |
+| windows/arm64    | Windows 10/11 ARM64                             |
+| linux            | Linux + architecture de la machine de construction |
+| linux/amd64      | Linux AMD64                                     |
+| linux/arm64      | Linux ARM64                                     |
+
+## Médecin
+
+`wails doctor` exécutera des diagnostics pour vérifier que votre système est prêt pour le développement.
+
+Exemple :
+
+```
+Wails CLI v2.0.0-beta
+
+Analyse du système - Veuillez patienter (cela peut prendre du temps)...Terminé.
+
+Système
+------
+OS:             Windows 10 Pro
+Version:        2009 (Build: 19043)
+ID:             21H1
+Go Version:     go1.18
+Plateforme:     windows
+Architecture:   amd64
+
+Dépendance      Nom du package    Statut          Version
+----------      ------------    ------          -------
+WebView2        N/A             Installé       93.0.961.52
+npm             N/A             Installé       6.14.15
+*upx            N/A             Installé       upx 3.96
+
+* - Dépendance facultative
+
+Diagnostic
+---------
+Votre système est prêt pour le développement avec Wails !
+
+```
+
+## dev
+
+`wails dev` est utilisé pour exécuter votre application en mode "développement en direct". Cela signifie :
+
+- Le fichier `go.mod` de l'application sera mis à jour pour utiliser la même version de Wails que celle de la CLI
+- L'application est compilée et exécutée automatiquement
+- Un observateur est lancé et déclenchera une reconstruction de votre application de développement s'il détecte des modifications dans vos fichiers go
+- Un serveur web est lancé sur `http://localhost:34115` qui sert votre application (pas seulement l'interface frontend) via http. Cela vous permet d'utiliser vos extensions de développement préférées dans votre navigateur.
+- Tous les fichiers de l'application sont chargés à partir du disque. S'ils sont modifiés, l'application se rechargera automatiquement (sans reconstruction). Tous les navigateurs connectés se rechargeront également.
+- Un module JS est généré qui fournit les éléments suivants :
+  - Des wrappers JavaScript de vos méthodes Go avec une documentation JSDoc générée automatiquement, offrant des indications de code
+  - Des versions TypeScript de vos structures Go, qui peuvent être construites et transmises à vos méthodes Go
+- Un second module JS est généré qui fournit un wrapper + une déclaration TS pour l'exécution
+- Sur macOS, il regroupera l'application dans un fichier `.app` et l'exécutera. Il utilisera un fichier `build/darwin/Info.dev.plist` pour le développement.
+
+| Drapeau                      | Description                                                                                                                                                                         | Par défaut            |
+|:-----------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------|
+| -appargs "args"              | Arguments passés à l'application au format shell                                                                                                                                    |                       |
+| -assetdir "./path/to/assets" | Servez les ressources à partir du répertoire donné au lieu d'utiliser le système de fichiers des ressources fourni                                                                 | Valeur dans `wails.json` |
+| -browser                     | Ouvre un navigateur à l'adresse `http://localhost:34115` au démarrage                                                                                                               |                       |
+| -compiler "compiler"         | Utilisez un compilateur go différent pour la construction, par exemple go1.15beta1                                                                                                  | go                    |
+| -debounce                    | Le temps d'attente avant de recharger après la détection d'un changement de ressource                                                                                              | 100 (millisecondes)   |
+| -devserver "host:port"       | L'adresse à laquelle lier le serveur de développement Wails                                                                                                                         | "localhost:34115"     |
+| -extensions                  | Extensions pour déclencher les recompilations (séparées par des virgules)                                                                                                            | go                    |
+| -forcebuild                  | Forcer la construction de l'application                                                                                                                                             |                       |
+| -frontenddevserverurl "url"  | Utiliser l'URL d'un serveur de développement tiers pour servir les ressources, par exemple Vite                                                                                    | ""                    |
+| -ldflags "flags"             | ldflags additionnels à transmettre au compilateur                                                                                                                                   |                       |
+| -loglevel "loglevel"         | Niveau de journalisation à utiliser - Trace, Debug, Info, Warning, Error                                                                                                            | Debug                 |
+| -nocolour                    | Désactiver la sortie de la ligne de commande en couleur                                                                                                                             | false                 |
+| -noreload                    | Désactiver le rechargement automatique lorsque les ressources changent                                                                                                              |                       |
+| -nosyncgomod                 | Ne pas synchroniser go.mod avec la version Wails                                                                                                                                    | false                 |
+| -race                        | Construire avec le détecteur de courses de Go                                                                                                                                       | false                 |
+| -reloaddirs                  | Répertoires supplémentaires pour déclencher les rechargements (séparés par des virgules)                                                                                           | Valeur dans `wails.json` |
+| -s                           | Ignorer la construction de l'interface utilisateur                                                                                                                                   | false                 |
+| -save                        | Enregistre les indicateurs `assetdir`, `reloaddirs`, `wailsjsdir`, `debounce`, `devserver` et `frontenddevserverurl` dans `wails.json` pour les invocations ultérieures.           |                       |
+| -skipbindings                | Ignorer la génération des liaisons                                                                                                                                                  |                       |
+| -tags "extra tags"           | Balises de construction à transmettre au compilateur (entre guillemets et séparées par des espaces)                                                                                |                       |
+| -v                           | Niveau de verbosité (0 - silencieux, 1 - standard, 2 - verbeux)                                                                                                                     | 1                     |
+| -wailsjsdir                  | Le répertoire pour générer les modules JS Wails générés                                                                                                                             | Valeur dans `wails.json` |
+
+Exemple :
+
+`wails dev -assetdir ./frontend/dist -wailsjsdir ./frontend/src -browser`
+
+Cette commande fera ce qui suit:
+
+- Construire l'application et l'exécuter (plus de détails [ici](../guides/manual-builds.mdx))
+- Générer les modules JS Wails dans `./frontend/src`
+- Observer les mises à jour des fichiers dans `./frontend/dist` et recharger en cas de modification
+- Ouvrir un navigateur et se connecter à l'application
+
+Il y a plus d'informations sur l'utilisation de cette fonctionnalité avec des scripts de framework existants [ici](../guides/application-development.mdx#live-reloading).
+
+## generate
+
+### template
+
+Wails utilise des modèles pour la génération de projet. La commande `wails generate template` aide à créer un modèle afin qu'il puisse être utilisé pour générer des projets.
+
+| Drapeau            | Description                                         |
+|:-------------------|:----------------------------------------------------|
+| -name              | Le nom du modèle (obligatoire)                       |
+| -frontend "chemin" | Chemin vers le projet frontend à utiliser dans modèle |
+
+Pour plus de détails sur la création de modèles, consultez le [guide des modèles](../guides/templates.mdx).
+
+### module
+
+La commande `wails generate module` vous permet de générer manuellement le répertoire `wailsjs` pour votre application.
+
+## mise à jour
+
+`wails update` mettra à jour la version de la CLI Wails.
+
+| Drapeau             | Description                                |
+|:-------------------|:--------------------------------------|
+| -pre               | Mettre à jour vers la dernière version préliminaire  |
+| -version "version" | Installer une version spécifique de la CLI | 
+
+## version
+
+`wails version` affichera simplement la version actuelle de la CLI.

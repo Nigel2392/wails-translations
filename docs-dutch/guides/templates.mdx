@@ -1,0 +1,97 @@
+# Sjablonen
+
+Wails genereert projecten op basis van vooraf gemaakte sjablonen. In v1 was dit een moeilijk te onderhouden set projecten die verouderd konden raken. In v2 zijn er een paar nieuwe functies toegevoegd aan de sjablonen om de community te ondersteunen:
+
+- Mogelijkheid om projecten te genereren vanuit [Externe sjablonen](../reference/cli.mdx#remote-templates)
+- Gereedschap om je eigen sjablonen te maken
+
+## Sjablonen maken
+
+Om een sjabloon te maken, kun je het commando `wails generate template` gebruiken. Om een standaardsjabloon te genereren, voer je het volgende uit:
+
+`wails generate template -name mytemplate`
+
+Dit maakt de map "mytemplate" met standaardbestanden:
+
+```shell title=mytemplate/
+.
+|-- NEXTSTEPS.md
+|-- README.md
+|-- app.tmpl.go
+|-- frontend
+|   `-- dist
+|       |-- assets
+|       |   |-- fonts
+|       |   |   |-- OFL.txt
+|       |   |   `-- nunito-v16-latin-regular.woff2
+|       |   `-- images
+|       |       `-- logo-dark.svg
+|       |-- index.html
+|       |-- main.css
+|       `-- main.js
+|-- go.mod.tmpl
+|-- main.tmpl.go
+|-- template.json
+`-- wails.tmpl.json
+```
+
+### Overzicht van sjablonen
+
+Het standaardsjabloon bestaat uit de volgende bestanden en mappen:
+
+| Bestandsnaam / Map | Beschrijving                                    |
+| ----------------- | ---------------------------------------------- |
+| NEXTSTEPS.md      | Instructies over hoe het sjabloon moet worden ingevuld |
+| README.md         | De README die bij het sjabloon wordt gepubliceerd |
+| app.tmpl.go       | Sjabloonbestand `app.go`                        |
+| frontend/         | De map met frontend-assets                      |
+| go.mod.tmpl       | Sjabloonbestand `go.mod`                        |
+| main.tmpl.go      | Sjabloonbestand `main.go`                       |
+| template.json     | Metadata van het sjabloon                       |
+| wails.tmpl.json   | Sjabloonbestand `wails.json`                     |
+
+Op dit punt is het raadzaam om de stappen in `NEXTSTEPS.md` te volgen.
+
+## Een sjabloon maken vanuit een bestaand project
+
+Het is mogelijk om een sjabloon te maken vanuit een bestaand frontend project door het pad naar het project door te geven bij het genereren van het sjabloon. We zullen nu doorlopen hoe je een Vue 3 sjabloon kunt maken:
+
+- Installeer de Vue CLI: `npm install -g @vue/cli`
+- Maak het standaardproject: `vue create vue3-base`
+  - Selecteer `Default (Vue 3) ([Vue 3] babel, eslint)`
+- Nadat het project is gegenereerd, voer je het volgende uit:
+
+```shell
+> wails generate template -name wails-vue3-template -frontend .\vue3-base\
+Base sjabloonbestanden extraheren...
+Bestaande projectbestanden migreren naar frontend-map...
+Package.json-gegevens bijwerken...
+Package.json hernoemen -> package.tmpl.json...
+Package-lock.json-gegevens bijwerken...
+Package-lock.json hernoemen -> package-lock.tmpl.json...
+```
+
+- Het sjabloon kan nu worden aangepast zoals gespecificeerd in het bestand `NEXTSTEPS.md`
+- Zodra de bestanden klaar zijn, kan het worden getest door het volgende uit te voeren: `wails init -n my-vue3-project -t .\wails-vue3-template\`
+- Om het nieuwe project te testen, voer je het volgende uit: `cd my-vue3-project` en vervolgens `wails build`
+- Nadat het project is gecompileerd, voer je het uit: `.\build\bin\my-vue3-project.exe`
+- Je zou nu een volledig functionerende Vue3-toepassing moeten hebben:
+
+```mdx-code-block
+<div className="text--center">
+  <img
+    src={require("@site/static/img/vue3-template.png").default}
+    width="50%"
+  />
+</div>
+```
+
+## Sjablonen publiceren
+
+Een sjabloon publiceren is simpelweg het pushen van de bestanden naar GitHub. De volgende best practice wordt aangeraden:
+
+- Verwijder ongewenste bestanden en mappen (zoals `.git`) uit je frontend-map
+- Zorg ervoor dat `template.json` compleet is, vooral `helpurl`
+- Push de bestanden naar GitHub
+- Maak een PR aan op de [Community-sjablonen](../community/templates.mdx) pagina
+- Maak de sjabloon bekend op het [Template-aankondigings](https://github.com/wailsapp/wails/discussions/825) discussiebord

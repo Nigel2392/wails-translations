@@ -1,0 +1,134 @@
+# Journal
+
+Le runtime de Wails offre un mécanisme de journalisation qui peut être appelé depuis Go ou JavaScript. Comme la plupart des journaux, il existe plusieurs niveaux de journalisation :
+
+- Trace
+- Debug
+- Info
+- Avertissement
+- Erreur
+- Fatal
+
+Le journal affichera tout message de journal au niveau de journalisation actuel, ou supérieur. Par exemple : le niveau de journalisation `Debug` affichera tous les messages sauf les messages de niveau `Trace`.
+
+### LogPrint
+
+Enregistre le message donné en tant que message brut.
+
+Go : `LogPrint(ctx context.Context, message string)`<br/>
+JS : `LogPrint(message: string)`
+
+### LogPrintf
+
+Enregistre le message donné en tant que message brut.
+
+Go : `LogPrintf(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogTrace
+
+Enregistre le message donné au niveau de journalisation `Trace`.
+
+Go : `LogTrace(ctx context.Context, message string)`<br/>
+JS : `LogTrace(message: string)`
+
+### LogTracef
+
+Enregistre le message donné au niveau de journalisation `Trace`.
+
+Go : `LogTracef(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogDebug
+
+Enregistre le message donné au niveau de journalisation `Debug`.
+
+Go : `LogDebug(ctx context.Context, message string)`<br/>
+JS : `LogDebug(message: string)`
+
+### LogDebugf
+
+Enregistre le message donné au niveau de journalisation `Debug`.
+
+Go: `LogDebugf(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogInfo
+
+Enregistre le message donné au niveau de journalisation `Info`.
+
+Go: `LogInfo(ctx context.Context, message string)`<br/>
+JS: `LogInfo(message: string)`
+
+### LogInfof
+
+Enregistre le message donné au niveau de journalisation `Info`.
+
+Go: `LogInfof(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogWarning
+
+Enregistre le message donné au niveau de journalisation `Warning`.
+
+Go: `LogWarning(ctx context.Context, message string)`<br/>
+JS: `LogWarning(message: string)`
+
+### LogWarningf
+
+Enregistre le message donné au niveau de journalisation `Warning`.
+
+Go: `LogWarningf(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogError
+
+Enregistre le message donné au niveau de journalisation `Error`.
+
+Go: `LogError(ctx context.Context, message string)`<br/>
+JS: `LogError(message: string)`
+
+### LogErrorf
+
+Enregistre le message donné au niveau de journalisation `Error`.
+
+Go: `LogErrorf(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogFatal
+
+Enregistre le message donné au niveau de journalisation `Fatal`.
+
+Go: `LogFatal(ctx context.Context, message string)`<br/>
+JS: `LogFatal(message: string)`
+
+### LogFatalf
+
+Enregistre le message donné au niveau de journalisation `Fatal`.
+
+Go: `LogFatalf(ctx context.Context, format string, args ...interface{})`<br/>
+
+### LogSetLogLevel
+
+Définit le niveau de journalisation. En JavaScript, le nombre correspond aux niveaux de journalisation suivants:
+
+| Valeur | Niveau de journalisation |
+| ------ | ----------------------- |
+| 1      | Trace                   |
+| 2      | Debug                   |
+| 3      | Info                    |
+| 4      | Warning                 |
+| 5      | Error                   |
+
+Go: `LogSetLogLevel(ctx context.Context, level logger.LogLevel)`<br/>
+JS: `LogSetLogLevel(level: number)`
+
+## Utilisation d'un journal personnalisé
+
+Un journal personnalisé peut être utilisé en le fournissant à l'aide de l'option d'application [Logger](../options.mdx#logger). La seule exigence est que le journal implémente l'interface `logger.Logger` définie dans `github.com/wailsapp/wails/v2/pkg/logger`:
+
+```go title="logger.go"
+type Logger interface {
+	Print(message string)
+	Trace(message string)
+	Debug(message string)
+	Info(message string)
+	Warning(message string)
+	Error(message string)
+	Fatal(message string)
+}
+```

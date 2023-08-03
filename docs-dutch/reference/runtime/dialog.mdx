@@ -1,0 +1,302 @@
+# Dialoog
+
+Dit gedeelte van de runtime biedt toegang tot native dialoogvensters, zoals bestandsselecteurs en berichtvensters.
+
+:::info JavaScript
+
+Dialoog wordt momenteel niet ondersteund in de JS-runtime.
+
+:::
+
+### OpenDirectoryDialog
+
+Opent een dialoogvenster waarin de gebruiker wordt gevraagd om een map te selecteren. Kan worden aangepast met behulp van [OpenDialogOptions](#opendialogoptions).
+
+Go: `OpenDirectoryDialog(ctx context.Context, dialogOptions OpenDialogOptions) (string, error)`
+
+Retourneert: Geselecteerde map (leeg als de gebruiker heeft geannuleerd) of een foutmelding
+
+### OpenFileDialog
+
+Opent een dialoogvenster waarin de gebruiker wordt gevraagd om een bestand te selecteren. Kan worden aangepast met behulp van [OpenDialogOptions](#opendialogoptions).
+
+Go: `OpenFileDialog(ctx context.Context, dialogOptions OpenDialogOptions) (string, error)`
+
+Retourneert: Geselecteerd bestand (leeg als de gebruiker heeft geannuleerd) of een foutmelding
+
+### OpenMultipleFilesDialog
+
+Opent een dialoogvenster waarin de gebruiker wordt gevraagd om meerdere bestanden te selecteren. Kan worden aangepast met behulp van [OpenDialogOptions](#opendialogoptions).
+
+Go: `OpenMultipleFilesDialog(ctx context.Context, dialogOptions OpenDialogOptions) ([]string, error)`
+
+Retourneert: Geselecteerde bestanden (nil als de gebruiker heeft geannuleerd) of een foutmelding
+
+### SaveFileDialog
+
+Opent een dialoogvenster waarin de gebruiker wordt gevraagd om een bestandsnaam te selecteren voor het opslaan. Kan worden aangepast met behulp van [SaveDialogOptions](#savedialogoptions).
+
+Go: `SaveFileDialog(ctx context.Context, dialogOptions SaveDialogOptions) (string, error)`
+
+Retourneert: Het geselecteerde bestand (leeg als de gebruiker heeft geannuleerd) of een foutmelding
+
+### MessageDialog
+
+Toont een bericht met behulp van een berichtvenster. Kan worden aangepast met behulp van [MessageDialogOptions](#messagedialogoptions).
+
+Go: `MessageDialog(ctx context.Context, dialogOptions MessageDialogOptions) (string, error)`
+
+Retourneert: De tekst van de geselecteerde knop of een foutmelding
+
+## Opties
+
+### OpenDialogOptions
+
+```go
+type OpenDialogOptions struct {
+	DefaultDirectory           string
+	DefaultFilename            string
+	Title                      string
+	Filters                    []FileFilter
+	ShowHiddenFiles            bool
+	CanCreateDirectories       bool
+	ResolvesAliases            bool
+	TreatPackagesAsDirectories bool
+}
+```
+
+| Veld                       | Beschrijving                                    | Win | Mac | Lin |
+| -------------------------- | ---------------------------------------------- | --- | --- | --- |
+| DefaultDirectory           | De map die wordt weergegeven wanneer het dialoogvenster wordt geopend | ✅  | ✅  | ✅  |
+| DefaultFilename            | De standaard bestandsnaam                       | ✅  | ✅  | ✅  |
+| Titel                      | Titel voor het dialoogvenster                   | ✅  | ✅  | ✅  |
+| [Filters](#filefilter)     | Een lijst met bestandsfilters                   | ✅  | ✅  | ✅  |
+| ShowHiddenFiles            | Verborgen bestanden weergeven                   |     | ✅  | ✅  |
+| KanMappenMaken             | Gebruiker toestaan mappen te maken              |     | ✅  |     |
+| ResolvesAliases            | Als waar, geeft het bestand terug in plaats van de alias |     | ✅  |     |
+| BehandelPackagesAlsMappen  | Navigeren naar packages toestaan                |     | ✅  |     |
+
+### SaveDialogOptions
+
+```go
+type SaveDialogOptions struct {
+	DefaultDirectory           string
+	DefaultFilename            string
+	Titel                      string
+	Filters                    []Bestandsfilter
+	ShowHiddenFiles            bool
+	KanMappenMaken             bool
+	BehandelPackagesAlsMappen  bool
+}
+```
+
+| Veld                       | Beschrijving                                    | Win | Mac | Lin |
+| -------------------------- | ---------------------------------------------- | --- | --- | --- |
+| DefaultDirectory           | De map die wordt weergegeven wanneer het dialoogvenster wordt geopend | ✅  | ✅  | ✅  |
+| DefaultFilename            | De standaard bestandsnaam                       | ✅  | ✅  | ✅  |
+| Titel                      | Titel voor het dialoogvenster                   | ✅  | ✅  | ✅  |
+| [Filters](#filefilter)     | Een lijst met bestandsfilters                   | ✅  | ✅  | ✅  |
+| ShowHiddenFiles            | Verborgen bestanden weergeven                   |     | ✅  | ✅  |
+| KanMappenMaken             | Gebruiker toestaan mappen te maken              |     | ✅  |     |
+| BehandelPackagesAlsMappen  | Navigeren naar packages toestaan                |     | ✅  |     |
+
+### MessageDialogOptions
+
+```go
+type MessageDialogOptions struct {
+	Type          DialoogType
+	Titel         string
+	Message       string
+	Knoppen       []string
+	StandaardKnop string
+	AnnuleerKnop  string
+}
+```
+
+| Veld          | Beschrijving                                                                | Win            | Mac | Lin |
+|---------------|----------------------------------------------------------------------------|----------------|-----|-----|
+| Type          | Het type van het berichtvenster, bijvoorbeeld vraag, info...               | ✅              | ✅   | ✅   |
+| Titel         | Titel voor het dialoogvenster                                              | ✅              | ✅   | ✅   |
+| Message       | Het bericht dat aan de gebruiker wordt getoond                             | ✅              | ✅   | ✅   |
+| Knoppen       | Een lijst met knoptitels                                                   |                | ✅   |     |
+| StandaardKnop | De knop met deze tekst moet als standaard worden behandeld. Gekoppeld aan `return`. | ✅[*](#windows) | ✅   |     |
+| AnnuleerKnop  | De knop met deze tekst moet als annuleren worden behandeld. Gekoppeld aan `escape`   |                | ✅   |     |
+
+#### Windows
+
+Windows heeft standaard dialoogvenstertypes waarbij de knoppen niet aanpasbaar zijn.
+De geretourneerde waarde zal een van de volgende zijn: "Ok", "Cancel", "Abort", "Retry", "Ignore", "Yes", "No", "Try Again" of "Continue".
+
+Voor vraagdialoogvensters is de standaardknop "Yes" en de annuleerknop "No".
+Dit kan worden gewijzigd door de waarde van `DefaultButton` in te stellen op `"No"`.
+
+Voorbeeld:
+```go
+	result, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+		Type:          runtime.QuestionDialog,
+		Title:         "Vraag",
+		Message:       "Wil je doorgaan?",
+		DefaultButton: "No",
+	})
+```
+
+#### Linux
+
+Linux heeft standaard dialoogvensters waarin de knoppen niet aanpasbaar zijn.
+De geretourneerde waarde zal een van de volgende zijn: "Ok", "Annuleren", "Ja", "Nee"
+
+#### Mac
+
+Een berichtdialoog op Mac kan maximaal 4 knoppen specificeren. Als er geen `DefaultButton` of `CancelButton` wordt gegeven, wordt de eerste knop
+beschouwd als standaard en is deze gekoppeld aan de `return`-toets.
+
+Voor de volgende code:
+
+```go
+selectie, fout := runtime.MessageDialog(b.ctx, runtime.MessageDialogOptions{
+    Titel:        "Jij bent aan de beurt!",
+    Bericht:      "Selecteer een nummer",
+    Knoppen:      []string{"een", "twee", "drie", "vier"},
+})
+```
+
+wordt de eerste knop weergegeven als standaard:
+
+```mdx-code-block
+<div class="text--center">
+  <img
+    src={require("@site/static/img/runtime/dialog_no_defaults.png").default} 
+    width="30%"
+    class="screenshot"
+  />
+</div>
+<br />
+```
+
+En als we `DefaultButton` specificeren als "two":
+
+```go
+selectie, err := runtime.MessageDialog(b.ctx, runtime.MessageDialogOptions{
+    Titel:         "Het is jouw beurt!",
+    Bericht:       "Selecteer een nummer",
+    Knoppen:       []string{"een", "twee", "drie", "vier"},
+    StandaardKnop: "twee",
+})
+```
+
+wordt de tweede knop standaard weergegeven. Wanneer er op `return` wordt gedrukt, wordt de waarde "twee" geretourneerd.
+
+```mdx-code-block
+<div class="text--center">
+  <img
+    src={require("@site/static/img/runtime/dialog_default_button.png").default} 
+    width="30%"
+    class="screenshot"
+  />
+</div>
+<br />
+```
+
+Als we nu `CancelButton` specificeren als "three":
+
+```go
+selectie, err := runtime.MessageDialog(b.ctx, runtime.MessageDialogOptions{
+    Titel:         "Het is jouw beurt!",
+    Bericht:       "Selecteer een nummer",
+    Knoppen:       []string{"een", "twee", "drie", "vier"},
+    StandaardKnop: "twee",
+    AnnuleerKnop:  "three",
+})
+```
+
+wordt de knop met "three" onderaan het dialoogvenster weergegeven. Wanneer er op `escape` wordt gedrukt, wordt de waarde "three" geretourneerd:
+
+```mdx-code-block
+<div class="text--center">
+  <img
+    src={require("@site/static/img/runtime/dialog_default_cancel.png").default} 
+    width="30%"
+    class="screenshot"
+  />
+</div>
+<br />
+<br />
+<br />
+```
+
+#### DialogType
+
+```go
+const (
+     	InformatieDialoog     DialogType = "info"
+     	WaarschuwingsDialoog  DialogType = "waarschuwing"
+     	FoutDialoog    DialogType = "fout"
+     	VraagDialoog DialogType = "vraag"
+     )
+```
+
+### Bestandsfilter
+
+```go
+type FileFilter struct {
+	DisplayName string // Filterinformatie bijv .: "Afbeeldingsbestanden (*.jpg, *.png)"
+	Pattern     string // puntkomma-gescheiden lijst van extensies bijv .: "*.jpg;*.png"
+}
+```
+
+#### Windows
+
+Windows staat toe dat je meerdere bestandsfilters gebruikt in dialoogvensters. Elke FileFilter wordt weergegeven als een afzonderlijke vermelding in het dialoogvenster:
+
+```mdx-code-block
+<div class="text--center">
+  <img
+    src={require("@site/static/img/runtime/dialog_win_filters.png").default} 
+    width="50%"
+    class="screenshot"
+  />
+</div>
+<br />
+<br />
+<br />
+```
+
+#### Linux
+
+Linux staat toe dat je meerdere bestandsfilters gebruikt in dialoogvensters. Elke FileFilter wordt weergegeven als een afzonderlijke vermelding in het dialoogvenster:
+
+```mdx-code-block
+<div class="text--center">
+  <img
+    src={require("@site/static/img/runtime/dialog_lin_filters.png").default} 
+    width="50%"
+    class="screenshot"
+  />
+</div>
+<br />
+<br />
+<br />
+```
+
+#### Mac
+
+Mac-dialogen hebben alleen het concept van een enkele set patronen om bestanden te filteren. Als er meerdere FileFilters worden opgegeven, zal Wails alle gedefinieerde patronen gebruiken.
+
+Voorbeeld:
+
+```go
+	selection, err := runtime.OpenFileDialog(b.ctx, runtime.OpenDialogOptions{
+		Title: "Selecteer bestand",
+		Filters: []runtime.FileFilter{
+			{
+				DisplayName: "Afbeeldingen (*.png;*.jpg)",
+				Pattern:     "*.png;*.jpg",
+			}, {
+				DisplayName: "Video's (*.mov;*.mp4)",
+				Pattern:     "*.mov;*.mp4",
+			},
+		},
+	})
+```
+
+Dit resulteert in het Openen van Bestand-dialoogvenster met `*.png,*.jpg,*.mov,*.mp4` als filter.

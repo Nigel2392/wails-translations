@@ -1,0 +1,18 @@
+# Linux
+
+Deze pagina bevat verschillende handleidingen met betrekking tot het ontwikkelen van Wails-toepassingen voor Linux.
+
+## Video-tag vuurt het "ended" evenement niet af
+
+Bij het gebruik van een video-tag wordt het "ended" evenement niet afgevuurd wanneer de video is afgelopen. Dit is een bug in WebkitGTK, maar je kunt de volgende workaround gebruiken om het op te lossen:
+
+```js
+videoTag.addEventListener("timeupdate", (event) => {
+  if (event.target.duration - event.target.currentTime < 0.2) {
+    let ended = new Event("ended");
+    event.target.dispatchEvent(ended);
+  }
+});
+```
+
+Bron: [Lyimmi](https://github.com/Lyimmi) op het [discussieforum](https://github.com/wailsapp/wails/issues/1729#issuecomment-1212291275)

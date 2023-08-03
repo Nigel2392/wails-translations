@@ -1,0 +1,28 @@
+---
+sidebar_position: 8
+---
+
+# 剪贴板
+
+运行时的这一部分提供了对操作系统剪贴板的访问。<br/> 
+当前实现仅处理文本。
+
+### ClipboardGetText
+
+此方法从剪贴板中读取当前存储的文本。
+
+Go语言：`ClipboardGetText(ctx context.Context) (string, error)`<br/>
+返回值：一个字符串（如果剪贴板为空，则返回空字符串）或一个错误。
+
+JS语言：`ClipboardGetText(): Promise<string>`<br/>
+返回值：一个带有字符串结果的Promise（如果剪贴板为空，则返回空字符串）。
+
+### ClipboardSetText
+
+此方法将文本写入剪贴板。
+
+Go语言：`ClipboardSetText(ctx context.Context, text string) error`<br/>
+返回值：如果有错误，则返回一个错误。
+
+JS语言：`ClipboardSetText(text: string): Promise<boolean>`<br/>
+返回值：一个带有true结果的Promise，如果成功将文本设置到剪贴板上，则返回false。

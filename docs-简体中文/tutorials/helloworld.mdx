@@ -1,0 +1,123 @@
+---
+sidebar_position: 10
+---
+
+# 你好世界
+
+本教程的目标是让你通过使用Wails来快速上手最基本的应用程序。你将能够：
+
+- 创建一个新的Wails应用程序
+- 构建应用程序
+- 运行应用程序
+
+:::note
+
+本教程使用Windows作为目标平台。根据你的操作系统，输出可能会有所不同。
+
+:::
+
+## 创建一个新的Wails应用程序
+
+要使用默认的纯JS模板创建一个新的Wails应用程序，你需要运行以下命令：
+
+```bash
+wails init -n helloworld
+```
+
+你应该会看到类似于以下内容的输出：
+
+```
+Wails CLI v2.0.0
+
+正在初始化项目 'helloworld'
+---------------------------------
+
+项目名称：      helloworld
+项目目录：      C:\Users\leaan\tutorial\helloworld
+项目模板：      vanilla
+模板支持：      https://wails.io
+
+在232ms内初始化项目 'helloworld'。
+```
+
+这将在当前目录下创建一个名为`helloworld`的新目录。在这个目录中，你会找到一些文件：
+
+```
+build/       - 包含构建文件+编译后的应用程序
+frontend/    - 包含前端文件
+app.go       - 包含应用程序代码
+main.go      - 包含应用程序配置的主程序
+wails.json   - 项目配置文件
+go.mod       - Go模块文件
+go.sum       - Go模块校验和文件
+```
+
+## 构建应用程序
+
+要构建应用程序，请切换到新的 `helloworld` 项目目录并运行以下命令：
+
+```bash
+wails build
+```
+
+您应该会看到类似以下的内容：
+
+``` 
+Wails CLI v2.0.0
+
+应用程序类型：desktop
+平台：windows/amd64
+编译器：C:\Users\leaan\go\go1.18.3\bin\go.exe
+构建模式：Production
+开发工具：false
+跳过前端：false
+压缩：false
+打包：true
+清理构建目录：false
+LDFlags：""
+标签：[]
+Race Detector：false
+
+正在构建目标：windows/amd64
+------------------------------
+  - 安装前端依赖项：完成。
+  - 编译前端：完成。
+  - 生成捆绑资源：完成。
+  - 编译应用程序：完成。
+已在 10.616 秒内构建 'C:\Users\leaan\tutorial\helloworld\build\bin\helloworld.exe'。
+```
+
+这样就编译了应用程序并将其保存在 `build/bin` 目录中。
+
+## 运行应用程序
+
+如果我们在Windows资源管理器中查看 `build/bin` 目录，应该会看到我们的项目二进制文件：
+
+```mdx-code-block
+<div class="text--center">
+  <img
+    src={require("@site/static/img/helloworld-app-icon.webp").default}
+    width="134px"
+  />
+</div>
+<br />
+```
+
+我们可以通过双击 `helloworld.exe` 文件来运行它。
+
+在Mac上，Wails会生成一个 `helloworld.app` 文件，可以通过双击它来运行。
+
+在Linux上，您可以使用 `./helloworld` 命令从 `build/bin` 目录运行应用程序。
+
+您应该会看到应用程序按预期工作：
+
+```mdx-code-block
+<div class="text--center">
+  <img
+    src={require("@site/static/img/windows-default-app.webp").default}
+    width="50%"
+    className="screenshot"
+  />
+</div>
+<br />
+```

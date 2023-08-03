@@ -1,0 +1,220 @@
+# 菜单
+
+可以在 Wails 项目中添加一个应用菜单。可以通过定义一个 [Menu](#menu) 结构体并在 [`Menu`](../reference/options.mdx#menu) 应用配置中设置它，或者通过调用运行时方法 [MenuSetApplicationMenu](../reference/runtime/menu.mdx#menusetapplicationmenu) 来实现。
+
+以下是创建菜单的示例：
+
+```go
+
+    app := NewApp()
+
+    AppMenu := menu.NewMenu()
+    FileMenu := AppMenu.AddSubmenu("File")
+    FileMenu.AddText("&Open", keys.CmdOrCtrl("o"), openFile)
+    FileMenu.AddSeparator()
+    FileMenu.AddText("Quit", keys.CmdOrCtrl("q"), func(_ *menu.CallbackData) {
+        runtime.Quit(app.ctx)
+    })
+
+    if runtime.GOOS == "darwin" {
+	AppMenu.Append(menu.EditMenu())  // 在 macOS 平台上，我们应该附加 EditMenu 以启用 Cmd+C、Cmd+V、Cmd+Z 等快捷键
+    }
+
+    err := wails.Run(&options.App{
+        Title:             "Menus Demo",
+        Width:             800,
+        Height:            600,
+        Menu:              AppMenu, // 引用上面的菜单
+        Bind: []interface{}{
+            app,
+        },
+    })
+    // ...
+```
+
+还可以通过更新菜单结构并调用 [MenuUpdateApplicationMenu](../reference/runtime/menu.mdx#menuupdateapplicationmenu) 方法来动态更新菜单。
+
+上面的示例使用了辅助方法，但也可以手动构建菜单结构。
+
+## 菜单
+
+菜单是一组菜单项：
+
+```go title="Package: github.com/wailsapp/wails/v2/pkg/menu"
+type Menu struct {
+	Items []*MenuItem
+}
+```
+
+对于应用菜单，每个菜单项代表一个单独的菜单，比如 "Edit"。
+
+提供了一个简单的辅助方法来构建菜单：
+
+```go title="Package: github.com/wailsapp/wails/v2/pkg/menu"
+func NewMenuFromItems(first *MenuItem, rest ...*MenuItem) *Menu
+```
+
+这样做可以使代码布局更像一个菜单，而无需在创建后手动添加菜单项。
+或者，您可以只创建菜单项并手动将它们添加到菜单中。
+
+## MenuItem
+
+MenuItem表示菜单中的一个项。
+
+```go title="Package: github.com/wailsapp/wails/v2/pkg/menu"
+// MenuItem表示菜单中的一个菜单项
+type MenuItem struct {
+	Label       string
+	Role        Role
+	Accelerator *keys.Accelerator
+	Type        Type
+	Disabled    bool
+	Hidden      bool
+	Checked     bool
+	SubMenu     *Menu
+	Click       Callback
+}
+```
+
+| 字段          | 类型                                | 备注                                                          |
+| ------------ | ----------------------------------- | ------------------------------------------------------------- |
+| Label        | string                              | 菜单文本                                                      |
+| Accelerator  | [\*keys.Accelerator](#accelerator)  | 该菜单项的键绑定                                             |
+| Type         | [Type](#type)                       | MenuItem的类型                                                |
+| Disabled     | bool                                | 禁用菜单项                                                    |
+| Hidden       | bool                                | 隐藏该菜单项                                                  |
+| Checked      | bool                                | 在项上添加勾选标记（复选框和单选框类型）                       |
+| SubMenu      | [\*Menu](#menu)                     | 设置子菜单                                                    |
+| Click        | [Callback](#callback)               | 菜单项点击时的回调函数                                         |
+| Role         | string                              | 为该菜单项定义一个[role](#role)。目前仅适用于Mac。              |
+
+### Accelerator
+
+快捷键（有时称为键盘快捷键）定义了按键和菜单项之间的绑定关系。Wails将Accelerator定义为键+ [Modifier](#modifier)的组合。它们可以在`"github.com/wailsapp/wails/v2/pkg/menu/keys"`包中使用。
+
+键是键盘上的任何单个字符，除了 `+`，它被定义为 `plus`。有些键无法表示为字符，因此有一组命名的字符可以使用：
+
+|             |       |       |           |
+| :---------: | :---: | :---: | :-------: |
+| `backspace` | `f1`  | `f16` |   `f31`   |
+|    `tab`    | `f2`  | `f17` |   `f32`   |
+|  `return`   | `f3`  | `f18` |   `f33`   |
+|   `enter`   | `f4`  | `f19` |   `f34`   |
+|  `escape`   | `f5`  | `f20` |   `f35`   |
+|   `left`    | `f6`  | `f21` | `numlock` |
+|   `right`   | `f7`  | `f22` |           |
+|    `up`     | `f8`  | `f23` |           |
+|   `down`    | `f9`  | `f24` |           |
+|   `space`   | `f10` | `f25` |           |
+|  `delete`   | `f11` | `f36` |           |
+|   `home`    | `f12` | `f37` |           |
+|    `end`    | `f13` | `f38` |           |
+|  `page up`  | `f14` | `f39` |           |
+| `page down` | `f15` | `f30` |           |
+
+Wails 还支持使用与 Electron 相同的语法解析加速键。这对于在配置文件中存储加速键非常有用。
+
+示例：
+
+```go title="Package: github.com/wailsapp/wails/v2/pkg/menu/keys"
+    // 在 Mac 上定义 cmd+o，在 Window/Linux 上定义 ctrl-o
+    myShortcut, err := keys.Parse("Ctrl+Option+A")
+```
+
+#### 修饰键
+
+以下修饰键可以与加速键组合使用：
+
+```go title="Package: github.com/wailsapp/wails/v2/pkg/menu/keys"
+const (
+	// CmdOrCtrlKey 表示 Mac 上的 Command 键，其他平台上的 Control 键
+	CmdOrCtrlKey Modifier = "cmdorctrl"
+	// OptionOrAltKey 表示 Mac 上的 Option 键，其他平台上的 Alt 键
+	OptionOrAltKey Modifier = "optionoralt"
+	// ShiftKey 表示所有系统上的 Shift 键
+	ShiftKey Modifier = "shift"
+	// ControlKey 表示所有系统上的 Control 键
+	ControlKey Modifier = "ctrl"
+)
+```
+
+有许多辅助方法可使用修饰符创建加速器：
+
+```go title="Package: github.com/wailsapp/wails/v2/pkg/menu/keys"
+func CmdOrCtrl(key string) *Accelerator
+func OptionOrAlt(key string) *Accelerator
+func Shift(key string) *Accelerator
+func Control(key string) *Accelerator
+```
+
+可以使用`keys.Combo(key string, modifier1 Modifier, modifier2 Modifier, rest ...Modifier)`来组合修饰符：
+
+```go title="Package: github.com/wailsapp/wails/v2/pkg/menu/keys"
+    //在Mac上定义"Ctrl+Option+A"，在Window/Linux上定义"Ctrl+Alt+A"
+    myShortcut := keys.Combo("a", ControlKey, OptionOrAltKey)
+```
+
+### 类型
+
+每个菜单项必须有一个类型，有5种可用类型：
+
+```go title="Package: github.com/wailsapp/wails/v2/pkg/menu"
+const (
+	TextType Type = "Text"
+	SeparatorType Type = "Separator"
+	SubmenuType Type = "Submenu"
+	CheckboxType Type = "Checkbox"
+	RadioType Type = "Radio"
+)
+```
+
+为了方便起见，提供了一些辅助方法来快速创建菜单项：
+
+```go title="Package: github.com/wailsapp/wails/v2/pkg/menu"
+func Text(label string, accelerator *keys.Accelerator, click Callback) *MenuItem
+func Separator() *MenuItem
+func Radio(label string, selected bool, accelerator *keys.Accelerator, click Callback) *MenuItem
+func Checkbox(label string, checked bool, accelerator *keys.Accelerator, click Callback) *MenuItem
+func SubMenu(label string, menu *Menu) *Menu
+```
+
+您还可以使用"Add"助手直接在菜单上创建菜单项：
+
+```go title="Package: github.com/wailsapp/wails/v2/pkg/menu"
+func (m *Menu) AddText(label string, accelerator *keys.Accelerator, click Callback) *MenuItem
+func (m *Menu) AddSeparator() *MenuItem
+func (m *Menu) AddRadio(label string, selected bool, accelerator *keys.Accelerator, click Callback) *MenuItem
+func (m *Menu) AddCheckbox(label string, checked bool, accelerator *keys.Accelerator, click Callback) *MenuItem
+func (m *Menu) AddSubMenu(label string, menu *Menu) *MenuI
+```
+
+关于单选组的说明：单选组被定义为菜单中相邻的一组单选菜单项。这意味着您不需要将项目分组在一起，因为它是自动的。然而，这也意味着您不能在一起拥有两个单选组 - 它们之间必须有一个非单选项。
+
+### 回调函数
+
+每个菜单项都可以有一个在单击项时执行的回调函数：
+
+```go title="Package: github.com/wailsapp/wails/v2/pkg/menu"
+type Callback func(*CallbackData)
+
+type CallbackData struct {
+	MenuItem    *MenuItem
+}
+```
+
+该函数接收一个`CallbackData`结构体作为参数，该结构体指示了触发回调的菜单项。这在使用可能共享回调的单选组时非常有用。
+
+### 角色
+
+:::info 角色
+
+角色目前仅在Mac上支持。
+
+:::
+
+菜单项可以有一个角色，这实际上是一个预定义的菜单项。我们目前支持以下角色：
+
+| 角色          | 描述                                                         |
+| ------------ | ----------------------------------------------------------- |
+| AppMenuRole  | 标准的Mac应用菜单。可以使用`menu.AppMenu()`创建。             |
+| EditMenuRole | 标准的Mac编辑菜单。可以使用`menu.EditMenu()`创建。             |

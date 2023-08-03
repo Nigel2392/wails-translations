@@ -1,0 +1,85 @@
+# Installatie
+
+## Ondersteunde platforms
+
+- Windows 10/11 AMD64/ARM64
+- MacOS 10.13+ AMD64
+- MacOS 11.0+ ARM64
+- Linux AMD64/ARM64
+
+## Vereisten
+
+Voordat u Wails installeert, moet u een aantal veelvoorkomende vereisten installeren:
+
+- Go 1.18+
+- NPM (Node 15+)
+
+### Go
+
+Download Go vanaf de [Go Downloads-pagina](https://go.dev/dl/).
+
+Zorg ervoor dat u de officiële [installatie-instructies van Go](https://go.dev/doc/install) volgt. U moet er ook voor zorgen dat uw `PATH`-omgevingsvariabele ook het pad naar uw `~/go/bin`-map bevat. Start uw terminal opnieuw op en voer de volgende controles uit:
+
+- Controleer of Go correct is geïnstalleerd: `go version`
+- Controleer of "~/go/bin" in uw PATH-variabele staat: `echo $PATH | grep go/bin`
+
+### NPM
+
+Download NPM vanaf de [Node Downloads-pagina](https://nodejs.org/en/download/). Het is het beste om de nieuwste release te gebruiken, omdat we daar over het algemeen tegen testen.
+
+Voer `npm --version` uit om te verifiëren.
+
+## Platformspecifieke vereisten
+
+U moet ook platformspecifieke vereisten installeren:
+
+```mdx-code-block
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+<Tabs
+  defaultValue="Windows"
+  values={[
+    { label: "Windows", value: "Windows" },
+    { label: "MacOS", value: "MacOS" },
+    { label: "Linux", value: "Linux" },
+  ]}
+>
+  <TabItem value="MacOS">
+    Wails vereist dat de xcode command line tools zijn geïnstalleerd. Dit kan worden gedaan door <code>xcode-select --install</code> uit te voeren.
+  </TabItem>
+  <TabItem value="Windows">
+    Wails vereist dat de <a href="https://developer.microsoft.com/en-us/microsoft-edge/webview2/">WebView2</a> runtime is geïnstalleerd. Sommige Windows-installaties hebben dit mogelijk al geïnstalleerd. U kunt dit controleren met behulp van het <code>wails doctor</code> commando.
+  </TabItem>
+  <TabItem value={"Linux"}>
+    Linux vereist de standaard <code>gcc</code> build-tools plus <code>libgtk3</code> en <code>libwebkit</code>. In plaats van een heleboel commando's voor verschillende distributies op te sommen, kan Wails proberen te bepalen wat de installatiecommando's zijn voor uw specifieke distributie. Voer na de installatie <code>wails doctor</code> uit om te zien hoe u de vereisten kunt installeren. Als uw distributie/pakketbeheerder niet wordt ondersteund, raadpleeg dan de <a href={"/docs/guides/linux-distro-support"}>Add Linux Distro</a>-handleiding.
+  </TabItem>
+</Tabs>
+```
+
+## Optionele vereisten
+
+- [UPX](https://upx.github.io/) voor het comprimeren van uw applicaties.
+- [NSIS](https://wails.io/docs/guides/windows-installer/) voor het genereren van Windows-installatieprogramma's.
+
+## Wails installeren
+
+Voer `go install github.com/wailsapp/wails/v2/cmd/wails@latest` uit om de Wails CLI te installeren.
+
+Opmerking: Als u een foutmelding krijgt die lijkt op deze:
+
+```shell
+....\Go\pkg\mod\github.com\wailsapp\wails\v2@v2.1.0\pkg\templates\templates.go:28:12: pattern all:ides/*: no matching files found
+```
+controleer dan of u Go 1.18+ geïnstalleerd heeft:
+```shell
+go version
+```
+
+## Systeemcontrole
+
+Als u `wails doctor` uitvoert, wordt gecontroleerd of u de juiste vereisten hebt geïnstalleerd. Zo niet, dan wordt u geadviseerd over wat er ontbreekt en wordt u geholpen bij het oplossen van eventuele problemen.
+
+## Het `wails`-commando lijkt te ontbreken?
+
+Als uw systeem aangeeft dat het `wails`-commando ontbreekt, zorg er dan voor dat u de Go-installatiegids correct hebt gevolgd. Meestal betekent dit dat de `go/bin`-map in de thuismap van uw gebruiker niet in de `PATH`-omgevingsvariabele staat. U moet ook meestal eventuele openstaande opdrachtpromptvensters sluiten en opnieuw openen, zodat wijzigingen in de omgeving die door de installateur zijn aangebracht, worden weergegeven in de opdrachtprompt.

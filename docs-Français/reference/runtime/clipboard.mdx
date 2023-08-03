@@ -1,0 +1,28 @@
+---
+sidebar_position: 8
+---
+
+# Presse-papiers
+
+Cette partie de l'exécution fournit un accès au presse-papiers du système d'exploitation.<br/>
+L'implémentation actuelle ne gère que le texte.
+
+### ClipboardGetText
+
+Cette méthode lit le texte actuellement stocké dans le presse-papiers.
+
+Go: `ClipboardGetText(ctx context.Context) (string, error)`<br/>
+Renvoie: une chaîne de caractères (si le presse-papiers est vide, une chaîne vide sera renvoyée) ou une erreur.
+
+JS: `ClipboardGetText(): Promise<string>`<br/>
+Renvoie: une promesse avec un résultat de type chaîne de caractères (si le presse-papiers est vide, une chaîne vide sera renvoyée).
+
+### ClipboardSetText
+
+Cette méthode écrit un texte dans le presse-papiers.
+
+Go: `ClipboardSetText(ctx context.Context, text string) error`<br/>
+Renvoie: une erreur s'il y en a une.
+
+JS: `ClipboardSetText(text: string): Promise<boolean>`<br/>
+Renvoie: une promesse avec un résultat de type booléen true si le texte a été correctement défini dans le presse-papiers, sinon false.

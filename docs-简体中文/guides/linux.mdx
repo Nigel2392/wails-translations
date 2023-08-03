@@ -1,0 +1,19 @@
+# Linux
+
+本页面包含与在Linux上开发Wails应用程序相关的各种指南。
+
+## Video标签不会触发"ended"事件
+
+当使用video标签时，当视频播放完毕时，不会触发"ended"事件。这是WebkitGTK中的一个错误，但您可以使用以下解决方法来修复它：
+
+```js
+videoTag.addEventListener("timeupdate", (event) => {
+  if (event.target.duration - event.target.currentTime < 0.2) {
+    let ended = new Event("ended");
+    event.target.dispatchEvent(ended);
+  }
+});
+```
+
+来源：[Lyimmi](https://github.com/Lyimmi)在
+[讨论板块](https://github.com/wailsapp/wails/issues/1729#issuecomment-1212291275)上的回复

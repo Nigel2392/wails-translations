@@ -1,0 +1,171 @@
+# 故障排除
+
+一些故障排除技巧。
+
+## 看起来缺少`wails`命令？
+
+如果您的系统报告缺少`wails`命令，请确保您已正确按照Go安装指南进行操作。通常，这意味着您的用户主目录中的`go/bin`目录未在`PATH`环境变量中。您通常还需要关闭并重新打开任何打开的命令提示符，以便安装程序对环境所做的更改能够在命令提示符中反映出来。
+
+## 我的应用程序显示空白屏幕
+
+检查您的应用程序是否包含来自正确目录的资源。在您的`main.go`文件中，您将有以下类似的代码：
+
+```go
+//go:embed all:frontend/dist
+var assets embed.FS
+```
+
+检查`frontend/dist`是否包含您的应用程序资源。
+
+### Mac
+
+如果这在Mac上发生，请尝试将以下内容添加到您的`Info.plist`文件中：
+
+```xml
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsLocalNetworking</key>
+    <true/>
+</dict>
+```
+
+参考：https://github.com/wailsapp/wails/issues/1504#issuecomment-1174317433
+
+## macOS 应用程序无效
+
+如果你构建的应用程序在 Finder 中显示如下：
+
+```mdx-code-block
+<p className="text--center">
+  <img
+    src={require("@site/static/img/troubleshooting/invalid_mac_app.png").default}
+  />
+</p>
+```
+
+很可能是你的应用程序的 `info.plist` 文件无效。更新 `build/<yourapp>.app/Contents/info.plist` 中的文件，并检查数据是否有效，例如检查二进制文件名是否正确。要保存更改，请将文件复制回 `build/darwin` 目录。
+
+## 我的应用程序在 Windows 资源管理器中显示的图标不正确
+
+如果你的应用程序没有显示正确的图标，请尝试删除位于 `C:\Users\<your username>\AppData\Local` 目录中的隐藏的 `IconCache.db` 文件。这将强制 Windows 重新建立图标缓存。
+
+来源：https://github.com/wailsapp/wails/issues/2360#issuecomment-1556070036
+
+## 无法使用可变参数从前端调用后端方法
+
+如果你在后端定义了一个带有可变参数的方法，例如：
+
+```go
+func (a *App) TestFunc(msg string, args ...interface{}) error {
+    // 代码
+}
+```
+
+在前端调用这个方法会失败，像这样：
+
+```js
+var msg = "Hello: ";
+var args = ["Go", "JS"];
+window.go.main.App.TestFunc(msg, ...args)
+  .then((result) => {
+    //在这里执行操作
+  })
+  .catch((error) => {
+    //处理错误
+  });
+```
+
+解决方法：
+
+```js
+var msg = "Hello ";
+var args = ["Go", "JS"];
+window.go.main.App.TestFunc(msg, args)
+  .then((result) => {
+    //没有使用三个点
+    //在这里执行操作
+  })
+  .catch((error) => {
+    //处理错误
+  });
+```
+
+来源：https://github.com/wailsapp/wails/issues/1186
+
+## 安装 Wails 时遇到代理错误
+
+如果你遇到以下错误：
+
+```bash
+"https://proxy.golang.org/github.com/wailsapp/wails/cmd/wails/@v/list": dial tcp 172.217.163.49:443: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
+```
+
+可能是因为官方的 Go 代理被阻止了（中国用户报告了这个问题）。
+解决方法是手动设置代理，例如：
+
+```bash
+go env -w GO111MODULE=on
+go env -w GOPROXY=https://goproxy.cn,direct
+```
+
+来源：https://github.com/wailsapp/wails/issues/1233
+
+## 生成的 TypeScript 没有正确的类型
+
+有时候生成的 TypeScript 没有正确的类型。为了解决这个问题，可以使用 `ts_type` 结构标签来指定应该生成的类型。更多详情，请阅读[这里](https://github.com/tkrajina/typescriptify-golang-structs#custom-types)。
+
+当我从`index.html`导航离开时，我无法在前端调用方法。
+
+如果您从`index.html`导航到新的html文件，上下文将丢失。可以通过将以下导入添加到您导航到的任何新页面的`<head>`部分来解决此问题：
+
+```html
+<head>
+  <script src="/wails/ipc.js"></script>
+  <script src="/wails/runtime.js"></script>
+</head>
+```
+
+来源：https://github.com/wailsapp/wails/discussions/1512
+
+## 当我运行`wails dev`时，在我的Mac上出现“too many open files”错误
+
+默认情况下，macOS只允许打开最多256个文件。这可能会影响`wails dev`命令。您可以通过在终端中运行`ulimit -n 1024`来增加此限制。
+
+FSNotify正在[考虑转移到Apple的fsevents](https://github.com/fsnotify/fsnotify/issues/11)用于Mac。如果这不久完成，我们将创建我们自己的实现，跟踪[此处](https://github.com/wailsapp/wails/issues/1733)。
+
+## 我的Mac应用程序给我奇怪的编译错误
+
+一些用户报告了出现以下编译错误的情况：
+
+```shell
+# github.com/wailsapp/wails/v2/internal/frontend/desktop/darwin
+从../../pkg/mod/github.com/wailsapp/wails/v2@v2.0.0-beta.44.2/internal/frontend/desktop/darwin/callbacks.go:9导入文件时：
+从/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h:12导入文件时：
+/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSBundle.h:91:143: 错误：函数不返回NSString
+- (NSAttributedString *)localizedAttributedStringForKey:(NSString *)key value:(nullable NSString *)value table:(nullable NSString *)tableName NS_FORMAT_ARGUMENT(1) NS_REFINED_FOR_SWIFT API_AVAILABLE(macos(12.0), ios(15.0), watchos(8.0), tvos(15.0));
+                                                         ~~~~~~~~~~~~~~                                                                       ^                  ~
+/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSObjCRuntime.h:103:48: 注意：来自宏'NS_FORMAT_ARGUMENT'的展开
+        #define NS_FORMAT_ARGUMENT(A) __attribute__ ((format_arg(A)))
+```
+
+通常这是由于您运行的操作系统版本与安装的XCode命令行工具版本不匹配所致。如果您看到这样的错误，请尝试将XCode命令行工具升级到最新版本。
+
+如果重新安装Xcode命令工具仍然失败，您可以使用以下命令检查工具包的路径：
+
+`xcode-select -p`
+
+如果显示的路径是`/Applications/Xcode.app/Contents/Developer`，请运行`sudo xcode-select --switch /Library/Developer/CommandLineTools`
+
+来源：https://github.com/wailsapp/wails/issues/1806 和 https://github.com/wailsapp/wails/issues/1140#issuecomment-1290446496
+
+--
+
+## 无法启动服务：主机版本"x.x.x"与二进制版本"x.x.x"不匹配
+
+最好将`frontend/node_modules`和`frontend/package-lock.json`添加到您的`.gitignore`中。否则，当在可能安装了不同版本Node的另一台机器上打开您的存储库时，您可能无法运行您的应用程序。
+
+如果确实发生了这种情况，请简单删除`frontend/node_modules`和`frontend/package-lock.json`，然后再次运行`wails build`或`wails dev`命令。
+
+## 构建过程卡在"生成绑定"上
+
+绑定生成过程以特殊模式运行您的应用程序。如果应用程序有意或无意地包含一个无限循环（即在`wails.Run()`完成后不退出），这可能导致构建过程卡在绑定生成阶段。请确保您的代码正确退出。

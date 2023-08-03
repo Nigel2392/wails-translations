@@ -1,0 +1,65 @@
+# Inleiding
+
+Wails is een project waarmee je desktop-apps kunt schrijven met behulp van Go en webtechnologieën.
+
+Bekijk het als een lichtgewicht en sneller alternatief voor Electron voor Go. Je kunt eenvoudig applicaties bouwen met de flexibiliteit en kracht van Go, gecombineerd met een rijke, moderne frontend.
+
+### Functies
+
+- Native menu's, dialoogvensters, thema's en transparantie
+- Ondersteuning voor Windows, macOS en Linux
+- Ingebouwde sjablonen voor Svelte, React, Preact, Vue, Lit en Vanilla JS
+- Eenvoudig Go-methoden aanroepen vanuit JavaScript
+- Automatische generatie van Go-struct naar TypeScript-model
+- Geen CGO of externe DLL's vereist op Windows
+- Live ontwikkelingsmodus met behulp van de kracht van [Vite](https://vitejs.dev/)
+- Krachtige CLI om eenvoudig applicaties te maken, te bouwen en te verpakken
+- Een uitgebreide [runtime-bibliotheek](/docs/reference/runtime/intro)
+- Applicaties die zijn gebouwd met Wails voldoen aan de eisen van Apple & Microsoft Store.Dit is [varly](https://varly.app) - een desktop applicatie voor MacOS & Windows geschreven met behulp van Wails. Niet alleen ziet het er geweldig uit, het maakt ook gebruik van native menu's en transparantie - alles wat je zou verwachten van een moderne native app.
+
+```mdx-code-block
+<p class="text--center">
+  <a href="https://varly.app/">
+    <img
+      src={require("@site/static/img/showcase/varly2.webp").default}
+      style={{ width: "75%", "max-width": "800px" }}
+    />
+  </a>
+</p>
+```
+
+### Snelstartsjablonen
+
+Wails wordt geleverd met een aantal vooraf geconfigureerde sjablonen waarmee je snel aan de slag kunt met je applicatie. Er zijn sjablonen beschikbaar voor de volgende frameworks: Svelte, React, Vue, Preact, Lit en Vanilla. Er zijn zowel JavaScript- als TypeScript-versies voor elk sjabloon.### Inheemse elementen
+
+Wails gebruikt een speciaal gebouwde bibliotheek voor het afhandelen van inheemse elementen zoals vensters, menu's, dialogen, enzovoort, zodat je mooie, functierijke desktoptoepassingen kunt bouwen.
+
+**Het bevat geen browser**, dus het is efficiënt in het gebruik van resources. In plaats daarvan maakt het gebruik van de inheemse renderengine voor het platform. Op Windows is dit de nieuwe Microsoft Webview2-bibliotheek, gebaseerd op Chromium.
+
+### Go & JavaScript-interoperabiliteit
+
+Wails maakt automatisch je Go-methoden beschikbaar voor JavaScript, zodat je ze bij naam kunt aanroepen vanuit je frontend! Het genereert zelfs TypeScript-modellen voor de structuren die worden gebruikt door je Go-methoden, zodat je dezelfde gegevensstructuren kunt doorgeven tussen Go en JavaScript.
+
+### Runtime-bibliotheek
+
+Wails biedt een runtime-bibliotheek voor zowel Go als JavaScript, die veel van de dingen afhandelt die moderne toepassingen nodig hebben, zoals gebeurtenissen, logging, dialogen, enzovoort.
+
+### Live ontwikkelervaring
+
+#### Automatische herbouw
+
+Wanneer je je toepassing in "dev"-modus uitvoert, zal Wails je toepassing bouwen als een native desktoptoepassing, maar zal het je assets vanaf de schijf lezen. Het detecteert eventuele wijzigingen in je Go-code en bouwt en start je toepassing automatisch opnieuw.
+
+#### Automatische herladen
+
+Wanneer wijzigingen aan je toepassingsassets worden gedetecteerd, wordt je lopende toepassing "herladen", waarbij je wijzigingen vrijwel onmiddellijk worden weergegeven.
+
+#### Ontwikkel je toepassing in een browser
+
+Als je liever debugt en ontwikkelt in een browser, dan heb je geluk met Wails. De lopende toepassing heeft ook een webserver die je toepassing in elke browser kan uitvoeren die ermee verbindt. Het wordt zelfs vernieuwd wanneer je assets op schijf veranderen.### Productieklare Native Binaries
+
+Wanneer je klaar bent om de definitieve build van je applicatie te maken, zal de CLI het compileren tot een enkele uitvoerbare file, met alle assets gebundeld erin. Op Windows en MacOS is het mogelijk om een native pakket te maken voor distributie. De assets die gebruikt worden bij het verpakken (icoon, info.plist, manifest bestand, enz.) maken deel uit van je project en kunnen worden aangepast, waardoor je volledige controle hebt over hoe je applicaties worden gebouwd.
+
+### Tooling
+
+De Wails CLI biedt een moeiteloze manier om je applicaties te genereren, te bouwen en te bundelen. Het zal het zware werk doen door iconen te maken, je applicatie te compileren met optimale instellingen en een distribueerbare, productieklare binair bestand te leveren. Kies uit een aantal starttemplates om snel aan de slag te gaan!

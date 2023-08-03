@@ -1,0 +1,14 @@
+# Angular
+
+尽管Wails没有Angular模板，但是可以在Wails中使用Angular。
+
+## 开发模式
+
+要在Angular中使用开发模式，需要在`wails.json`中添加以下内容：
+
+```json
+  "frontend:build": "npx ng build",
+  "frontend:install": "npm install",
+  "frontend:dev:watcher": "npx ng serve",
+  "frontend:dev:serverUrl": "http://localhost:4200",
+```

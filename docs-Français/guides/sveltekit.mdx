@@ -1,0 +1,133 @@
+# SvelteKit
+
+Ce guide abordera :
+1. Étapes d'installation minimales - Les étapes nécessaires pour mettre en place un minimum de configuration Wails pour SvelteKit.
+2. Script d'installation - Script Bash pour accomplir les étapes d'installation minimales avec une option de branding Wails.
+3. Notes importantes - Problèmes pouvant être rencontrés lors de l'utilisation de SvelteKit + Wails et solutions.
+
+## 1. Étapes d'installation minimales
+
+##### Installer Wails pour Svelte.
+- `wails init -n myapp -t svelte`
+
+##### Supprimer le frontend Svelte.
+- Naviguer dans le dossier "myapp" nouvellement créé.
+- Supprimer le dossier nommé "frontend".
+
+##### Tout en étant à la racine du projet Wails. Utilisez votre gestionnaire de paquets préféré et installez SvelteKit en tant que nouveau frontend. Suivez les invites.
+- `npm create svelte@latest frontend`
+
+##### Modifier wails.json.
+- Ajouter `"wailsjsdir": "./frontend/src/lib",` Notez que c'est ici que vos fonctions Go et runtime apparaîtront.
+- Changez votre gestionnaire de paquets frontend ici si vous n'utilisez pas npm.
+
+##### Modifier main.go.
+- Le premier commentaire `//go:embed all:frontend/dist` doit être changé en `//go:embed all:frontend/build`
+
+##### Installer/supprimer les dépendances à l'aide de votre gestionnaire de paquets préféré.
+- Naviguer dans le dossier "frontend".
+- `npm i`
+- `npm uninstall @sveltejs/adapter-auto`
+- `npm i -D @sveltejs/adapter-static`
+
+##### Changer l'adaptateur dans svelte.config.js.
+- Modifier la première ligne du fichier `import adapter from '@sveltejs/adapter-auto';` en `import adapter from '@sveltejs/adapter-static';`
+
+##### Mettre SvelteKit en mode SPA avec rendu préalable.
+- Créer un fichier sous le nom +layout.ts/+layout.js dans le dossier myapp/frontend/src/routes/.
+- Ajouter deux lignes dans le fichier nouvellement créé : `export const prerender = true` et `export const ssr = false`
+
+##### Installation de test.
+- Revenez au répertoire racine du projet Wails (un répertoire en amont).
+- Exécutez `wails dev`
+- Si l'application ne fonctionne pas, veuillez vérifier les étapes précédentes.
+
+## 2. Script d'installation
+
+##### Ce script Bash effectue les étapes énumérées ci-dessus. Assurez-vous de lire attentivement le script et de comprendre ce que le script fait sur votre ordinateur.
+
+- Créez un fichier sveltekit-wails.sh.
+- Copiez le code ci-dessous dans le nouveau fichier, puis enregistrez-le.
+- Rendez-le exécutable avec `chmod +x sveltekit-wails.sh`.
+- Brand est un paramètre facultatif ci-dessous qui réintègre la marque Wails. Laissez le troisième paramètre vide pour ne pas insérer la marque Wails.
+- Exemple d'utilisation : `./sveltekit-wails.sh pnpm newapp brand`
+
+##### sveltekit-wails.sh:
+```bash
+manager=$1
+project=$2
+brand=$3
+wails init -n $project -t svelte
+cd $project
+sed -i "s|npm|$manager|g" wails.json
+sed -i 's|"auto",|"auto",\n  "wailsjsdir": "./frontend/src/lib",|' wails.json
+sed -i "s|all:frontend/dist|all:frontend/build|" main.go
+if [[ -n $brand ]]; then
+	mv frontend/src/App.svelte +page.svelte
+	sed -i "s|'./assets|'\$lib/assets|" +page.svelte
+	sed -i "s|'../wails|'\$lib/wails|" +page.svelte
+	mv frontend/src/assets .
+fi
+rm -r frontend
+$manager create svelte@latest frontend
+if [[ -n $brand ]]; then
+	mv +page.svelte frontend/src/routes/+page.svelte
+	mkdir frontend/src/lib
+	mv assets frontend/src/lib/
+fi
+cd frontend
+$manager i
+$manager uninstall @sveltejs/adapter-auto
+$manager i -D @sveltejs/adapter-static
+echo -e "export const prerender = true\nexport const ssr = false" > src/routes/+layout.ts
+sed -i "s|-auto';|-static';|" svelte.config.js
+cd ..
+wails dev
+```
+
+## 3. Notes importantes
+
+##### Les fichiers serveur provoqueront des échecs de construction.
+- +layout.server.ts, +page.server.ts, +server.ts ou tout fichier avec "server" dans le nom échouera à la construction car toutes les routes sont pré-rendues.
+
+##### Le runtime de Wails se décharge avec les navigations de page complètes !
+- Tout ce qui provoque des navigations de page complètes : `window.location.href = '/<quelque>/<page>'` ou le rechargement du menu contextuel lors de l'utilisation de wails dev. Cela signifie que vous pouvez perdre la possibilité d'appeler n'importe quel runtime, ce qui casse l'application. Il existe deux façons de contourner cela.
+- Utilisez `import { goto } from '$app/navigation'` puis appelez `goto('/<quelque>/<page>')` dans votre +page.svelte. Cela empêchera une navigation de page complète.
+- Si la navigation de page complète ne peut pas être empêchée, le runtime de Wails peut être ajouté à toutes les pages en ajoutant ce qui suit dans la balise `<head>` de myapp/frontend/src/app.html
+```html
+<head>
+...
+	<meta name="wails-options" content="noautoinject" />
+	<script src="/wails/ipc.js"></script>
+	<script src="/wails/runtime.js"></script>
+...
+</head>
+```
+Voir https://wails.io/docs/guides/frontend pour plus d'informations.
+
+##### Les données initiales peuvent être chargées et rafraîchies depuis +page.ts/+page.js vers +page.svelte.
+- +page.ts/+page.js fonctionne bien avec load() https://kit.svelte.dev/docs/load#page-data
+- invalidateAll() dans +page.svelte appellera load() depuis +page.ts/+page.js https://kit.svelte.dev/docs/load#rerunning-load-functions-manual-invalidation.
+
+##### Gestion des erreurs
+- Les erreurs attendues en utilisant Throw error fonctionnent dans +page.ts/+page.js avec une page +error.svelte. https://kit.svelte.dev/docs/errors#expected-errors
+- Les erreurs inattendues rendront l'application inutilisable. La seule option de récupération (connue jusqu'à présent) à partir d'erreurs inattendues est de recharger l'application. Pour ce faire, créez un fichier myapp/frontend/src/hooks.client.ts puis ajoutez le code ci-dessous au fichier.
+```javascript
+import { WindowReloadApp } from '$lib/wailsjs/runtime/runtime' 
+export async function handleError() {
+	WindowReloadApp()
+}
+```
+
+##### Utilisation des formulaires et des fonctions de gestion
+- La façon la plus simple d'appeler une fonction à partir du formulaire est la norme, bind:value vos variables et empêchez la soumission `<form method="POST" on:submit|preventDefault={handle}>`
+- La façon plus avancée est d'utiliser :enhance (amélioration progressive) qui permet un accès pratique à formData, formElement, submitter. La note importante est d'annuler toujours() le formulaire, ce qui empêche le comportement côté serveur.  https://kit.svelte.dev/docs/form-actions#progressive-enhancement  Exemple :
+```html
+<form method="POST" use:enhance={({cancel, formData, formElement, submitter}) => {
+	cancel()
+	console.log(Object.fromEntries(formData))
+	console.log(formElement)
+	console.log(submitter)
+	handle()
+}}>
+```

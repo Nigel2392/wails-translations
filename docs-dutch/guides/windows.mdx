@@ -1,0 +1,71 @@
+# Windows
+
+Deze pagina bevat diverse handleidingen met betrekking tot het ontwikkelen van Wails-toepassingen voor Windows.
+
+## Omgaan met de afhankelijkheid van de WebView2 Runtime
+
+Wails-toepassingen die zijn gebouwd voor Windows vereisen de Microsoft [WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/).
+Windows 11 zal dit standaard geïnstalleerd hebben, maar sommige machines niet. Wails biedt een eenvoudige aanpak om met deze afhankelijkheid om te gaan.
+
+Door de `-webview2` vlag te gebruiken bij het bouwen, kun je bepalen wat je toepassing zal doen wanneer er geen geschikte runtime wordt gedetecteerd (inclusief wanneer de geïnstalleerde runtime te oud is).
+De vier opties zijn:
+
+1. Downloaden
+2. Insluiten
+3. Browser
+4. Fout
+
+### Downloaden
+
+Deze optie geeft de gebruiker een melding dat er geen geschikte runtime is gevonden en biedt vervolgens aan om de officiële
+bootstrapper van de WebView2-website van Microsoft te downloaden en uit te voeren. Als de gebruiker doorgaat, wordt de officiële bootstrapper gedownload en uitgevoerd.
+
+### Insluiten
+
+Deze optie sluit de officiële bootstrapper in binnen de toepassing. Als er geen geschikte runtime is gevonden, wordt de
+toepassing aangeboden om de bootstrapper uit te voeren. Dit voegt ongeveer 150 KB toe aan de bestandsgrootte.
+
+### Browser
+
+Deze optie geeft de gebruiker een melding dat er geen geschikte runtime is gevonden en biedt vervolgens aan om een browser te openen naar de officiële
+WebView2-pagina waar de bootstrapper gedownload en geïnstalleerd kan worden. De toepassing wordt vervolgens afgesloten, waardoor de installatie
+aan de gebruiker wordt overgelaten.
+
+### Fout
+
+Als er geen geschikte runtime is gevonden, krijgt de gebruiker een foutmelding en wordt er geen verdere actie ondernomen.
+
+## Vaste versie runtime
+
+Een andere manier om met de afhankelijkheid van WebView2 om te gaan, is door deze zelf mee te leveren.
+Je kunt de [vaste versie runtime](https://developer.microsoft.com/microsoft-edge/webview2/#download-section) downloaden en bundelen of downloaden met je toepassing.
+
+Daarnaast moet je het pad naar de vaste versie van de WebView2-runtime specificeren in de `windows.Options`-structuur bij het starten van Wails.
+
+```go
+	wails.Run(&options.App{
+		Windows: &windows.Options{
+			WebviewBrowserPath:  "",
+		},
+	})
+```
+
+Let op: wanneer `WebviewBrowserPath` is gespecificeerd, wordt de `error`-strategie gedwongen in het geval van een minimale vereiste versie
+mismatch of ongeldig pad naar een runtime.
+
+## Starten van andere programma's
+
+Bij het starten van andere programma's, zoals scripts, zal het venster op het scherm verschijnen. Om het venster te verbergen,
+kun je de volgende code gebruiken:
+
+```go
+cmd := exec.Command("your_script.exe")
+cmd.SysProcAttr = &syscall.SysProcAttr{
+	HideWindow:    true,
+	CreationFlags: 0x08000000,
+}
+cmd.Start()
+```
+
+Oplossing aangedragen door [sithembiso](https://github.com/sithembiso) op het
+[discussieforum](https://github.com/wailsapp/wails/discussions/1734#discussioncomment-3386172).

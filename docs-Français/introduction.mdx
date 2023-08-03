@@ -1,0 +1,71 @@
+# Introduction
+
+Wails est un projet qui vous permet d'écrire des applications de bureau en utilisant Go et les technologies web.
+
+Considérez-le comme une alternative légère et rapide à Electron pour Go. Vous pouvez facilement construire des applications avec la flexibilité et la puissance de Go, combinées à une interface utilisateur moderne et riche.
+
+### Fonctionnalités
+
+- Menus natifs, boîtes de dialogue, thèmes et translucidité
+- Prise en charge de Windows, macOS et Linux
+- Modèles intégrés pour Svelte, React, Preact, Vue, Lit et Vanilla JS
+- Appel facile de méthodes Go depuis JavaScript
+- Génération automatique de modèles TypeScript à partir de structures Go
+- Aucun CGO ni DLL externe requis sur Windows
+- Mode de développement en direct grâce à la puissance de [Vite](https://vitejs.dev/)
+- Interface en ligne de commande puissante pour créer, construire et empaqueter facilement des applications
+- Une riche bibliothèque d'exécution
+- Les applications construites avec Wails sont conformes aux normes Apple et Microsoft Store.
+
+Ceci est [varly](https://varly.app) - une application de bureau pour MacOS et Windows écrite en utilisant Wails. Non seulement elle a l'air géniale, mais elle utilise également des menus natifs et de la translucidité - tout ce que vous attendez d'une application native moderne.
+
+```mdx-code-block
+<p class="text--center">
+  <a href="https://varly.app/">
+    <img
+      src={require("@site/static/img/showcase/varly2.webp").default}
+      style={{ width: "75%", "max-width": "800px" }}
+    />
+  </a>
+</p>
+```
+
+### Modèles de démarrage rapide
+
+Wails est livré avec plusieurs modèles préconfigurés qui vous permettent de démarrer rapidement votre application. Il existe des modèles pour les frameworks suivants : Svelte, React, Vue, Preact, Lit et Vanilla. Il existe des versions en JavaScript et en TypeScript pour chaque modèle.
+
+### Éléments natifs
+
+Wails utilise une bibliothèque spécialement conçue pour gérer les éléments natifs tels que la fenêtre, les menus, les boîtes de dialogue, etc., afin que vous puissiez créer des applications de bureau attrayantes et riches en fonctionnalités.
+
+**Il n'intègre pas de navigateur**, il est donc efficace en termes de ressources. Au lieu de cela, il utilise le moteur de rendu natif de la plateforme. Sur Windows, il s'agit de la nouvelle bibliothèque Microsoft Webview2, basée sur Chromium.
+
+### Interopérabilité Go & JavaScript
+
+Wails rend automatiquement vos méthodes Go disponibles pour JavaScript, vous pouvez donc les appeler par leur nom depuis votre interface utilisateur ! Il génère même des modèles TypeScript pour les structures utilisées par vos méthodes Go, vous permettant ainsi de transmettre les mêmes structures de données entre Go et JavaScript.
+
+### Bibliothèque d'exécution
+
+Wails fournit une bibliothèque d'exécution, à la fois pour Go et JavaScript, qui gère de nombreuses fonctionnalités nécessaires aux applications modernes, telles que l'événementiel, la journalisation, les boîtes de dialogue, etc.
+
+### Expérience de développement en direct
+
+#### Reconstructions automatiques
+
+Lorsque vous exécutez votre application en mode "dev", Wails construira votre application en tant qu'application de bureau native, mais lira vos ressources à partir du disque. Il détectera les modifications apportées à votre code Go et reconstruira et relancera automatiquement votre application.
+
+#### Rechargements automatiques
+
+Lorsque des modifications sont détectées dans vos ressources d'application, votre application en cours d'exécution se "recharge", reflétant ainsi vos modifications presque immédiatement.
+
+#### Développez votre application dans un navigateur
+
+Si vous préférez déboguer et développer dans un navigateur, Wails a ce qu'il vous faut. L'application en cours d'exécution dispose également d'un serveur web qui exécutera votre application dans n'importe quel navigateur qui s'y connecte. Il se rafraîchira même lorsque vos ressources changent sur le disque.
+
+### Binaires natifs prêts pour la production
+
+Lorsque vous êtes prêt à effectuer la construction finale de votre application, la CLI la compilera en un seul exécutable, avec tous les éléments intégrés. Sur Windows et MacOS, il est possible de créer un package natif pour la distribution. Les éléments utilisés pour l'emballage (icône, info.plist, fichier de manifeste, etc.) font partie de votre projet et peuvent être personnalisés, vous donnant un contrôle total sur la façon dont vos applications sont construites.
+
+### Outils
+
+La CLI de Wails fournit un moyen sans tracas de générer, construire et empaqueter vos applications. Elle se chargera de la majeure partie du travail, en créant des icônes, en compilant votre application avec des paramètres optimaux et en fournissant un binaire distribuable, prêt pour la production. Choisissez parmi plusieurs modèles de démarrage pour démarrer rapidement !

@@ -1,0 +1,170 @@
+# Probleemoplossing
+
+Een assortiment van probleemoplossingstips.
+
+## Het 'wails' commando lijkt te ontbreken?
+
+Als je systeem rapporteert dat het 'wails' commando ontbreekt, zorg er dan voor dat je de Go installatiehandleiding correct hebt gevolgd. Normaal gesproken betekent dit dat de 'go/bin' map in de home directory van je gebruiker niet in de 'PATH' omgevingsvariabele staat. Je moet ook meestal alle geopende opdrachtpromptvensters sluiten en opnieuw openen, zodat wijzigingen in de omgeving die zijn aangebracht door de installateur worden weergegeven in het opdrachtpromptvenster.
+
+## Mijn applicatie toont een wit/leeg scherm
+
+Controleer of je applicatie de assets uit de juiste map bevat. In je 'main.go' bestand, heb je iets vergelijkbaars als de volgende code:
+
+```go
+//go:embed all:frontend/dist
+var assets embed.FS
+```
+
+Controleer of 'frontend/dist' je applicatie assets bevat.
+
+### Mac
+
+Als dit gebeurt op een Mac, probeer dan het volgende toe te voegen aan je 'Info.plist':
+
+```xml
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsLocalNetworking</key>
+    <true/>
+</dict>
+```
+
+Referentie: https://github.com/wailsapp/wails/issues/1504#issuecomment-1174317433
+
+## Mac applicatie is niet geldig
+
+Als je gebouwde applicatie er op een Mac zo uitziet in Finder:
+
+```mdx-code-block
+<p className="text--center">
+  <img
+    src={require("@site/static/img/troubleshooting/invalid_mac_app.png").default}
+  />
+</p>
+```
+
+dan is het waarschijnlijk dat de 'info.plist' van je applicatie ongeldig is. Werk het bestand bij in `build/<jouwapp>.app/Contents/info.plist` en controleer of de gegevens geldig zijn, bijvoorbeeld controleer of de binaire naam correct is. Kopieer het bestand terug naar de `build/darwin` map om de wijzigingen te behouden.
+
+## Mijn applicatie toont het juiste pictogram niet in Windows Verkenner
+
+Als je applicatie het juiste pictogram niet weergeeft, probeer dan het verborgen bestand 'IconCache.db' te verwijderen dat zich bevindt in de `C:\Users\<jouw gebruikersnaam>\AppData\Local` map. Dit dwingt Windows om de pictogramcache opnieuw op te bouwen.
+
+Bron: https://github.com/wailsapp/wails/issues/2360#issuecomment-1556070036
+
+## Kan backend methode vanuit frontend niet aanroepen met variabele argumenten
+
+Als je een backend methode hebt gedefinieerd met variabele parameters, bijvoorbeeld:
+
+```go
+func (a *App) TestFunc(msg string, args ...interface{}) error {
+    // Code
+}
+```
+
+zal het aanroepen van deze methode vanuit de frontend zoals dit mislukken:
+
+```js
+var msg = "Hallo: ";
+var args = ["Go", "JS"];
+window.go.main.App.TestFunc(msg, ...args)
+  .then((result) => {
+    //acties hier uitvoeren
+  })
+  .catch((error) => {
+    //fout afhandelen
+  });
+```
+
+Oplossing:
+
+```js
+var msg = "Hallo ";
+var args = ["Go", "JS"];
+window.go.main.App.TestFunc(msg, args)
+  .then((result) => {
+    //zonder de 3 puntjes
+    //acties hier uitvoeren
+  })
+  .catch((error) => {
+    //fout afhandelen
+  });
+```
+
+Bron: https://github.com/wailsapp/wails/issues/1186
+
+## Ik krijg proxyfouten bij het installeren van Wails
+
+Als je fouten krijgt zoals deze:
+
+```console
+"https://proxy.golang.org/github.com/wailsapp/wails/cmd/wails/@v/list": dial tcp 172.217.163.49:443: connectex: Een verbindingspoging is mislukt omdat de verbonden partij niet correct heeft geantwoord na een bepaalde tijd of de verbinding is mislukt omdat de verbonden host niet heeft geantwoord.
+```
+
+is dit waarschijnlijk omdat de officiële Go Proxy wordt geblokkeerd (gebruikers in China hebben dit gemeld). De oplossing is om de proxy handmatig in te stellen, bijvoorbeeld:
+
+```console
+go env -w GO111MODULE=on
+go env -w GOPROXY=https://goproxy.cn,direct
+```
+
+Bron: https://github.com/wailsapp/wails/issues/1233
+
+## De gegenereerde TypeScript heeft niet de juiste types
+
+Soms heeft de gegenereerde TypeScript niet de juiste types. Om dit te verhelpen, is het mogelijk om te specificeren welke types moeten worden gegenereerd met behulp van de `ts_type` struct tag. Voor meer informatie, lees [hier](https://github.com/tkrajina/typescriptify-golang-structs#custom-types).
+
+## Wanneer ik weg navigeer van `index.html`, kan ik geen methoden op de frontend aanroepen
+
+Als je weg navigeert van `index.html` naar een nieuwe html pagina, gaat de context verloren. Dit kan worden opgelost door de volgende imports toe te voegen aan de `<head>` sectie van elke nieuwe pagina waar je naartoe navigeert:
+
+```html
+<head>
+  <script src="/wails/ipc.js"></script>
+  <script src="/wails/runtime.js"></script>
+</head>
+```
+
+Bron: https://github.com/wailsapp/wails/discussions/1512
+
+## Ik krijg `too many open files` fouten op mijn Mac wanneer ik `wails dev` uitvoer
+
+Standaard staat macOS je slechts toe om maximaal 256 bestanden te openen. Dit kan invloed hebben op het `wails dev` commando. Je kunt dit limiet verhogen door het volgende uit te voeren: `ulimit -n 1024` in de terminal.
+
+FSNotify is [van plan over te stappen naar Apple's fsevents](https://github.com/fsnotify/fsnotify/issues/11) voor Mac. Als dit binnenkort niet wordt voltooid, zullen we onze eigen implementatie maken, zie [hier](https://github.com/wailsapp/wails/issues/1733).
+
+## Mijn Mac app geeft vreemde compilatiefouten
+
+Een aantal gebruikers heeft gemeld compilatiefouten te zien, zoals de volgende:
+
+```shell
+# github.com/wailsapp/wails/v2/internal/frontend/desktop/darwin
+In file included from ../../pkg/mod/github.com/wailsapp/wails/v2@v2.0.0-beta.44.2/internal/frontend/desktop/darwin/callbacks.go:9:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h:12:
+/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSBundle.h:91:143: error: function does not return NSString
+- (NSAttributedString *)localizedAttributedStringForKey:(NSString *)key value:(nullable NSString *)value table:(nullable NSString *)tableName NS_FORMAT_ARGUMENT(1) NS_REFINED_FOR_SWIFT API_AVAILABLE(macos(12.0), ios(15.0), watchos(8.0), tvos(15.0));
+                                                         ~~~~~~~~~~~~~~                                                                       ^                  ~
+/Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSObjCRuntime.h:103:48: note: expanded from macro 'NS_FORMAT_ARGUMENT'
+        #define NS_FORMAT_ARGUMENT(A) __attribute__ ((format_arg(A)))
+```
+
+Dit komt _normaal gesproken_ door een mismatch tussen de versie van het besturingssysteem dat je gebruikt en de versie van de geïnstalleerde XCode Command Line Tools. Als je een foutmelding als deze ziet, probeer dan je XCode Command Line Tools bij te werken naar de nieuwste versie.
+
+Als het opnieuw installeren van Xcode Command Tools nog steeds niet lukt, kun je de locatie controleren waar de toolkit is geïnstalleerd met behulp van:
+
+`xcode-select -p`
+
+Als `/Applications/Xcode.app/Contents/Developer` wordt weergegeven, voer dan `sudo xcode-select --switch /Library/Developer/CommandLineTools` uit.
+
+Bronnen: https://github.com/wailsapp/wails/issues/1806 en https://github.com/wailsapp/wails/issues/1140#issuecomment-1290446496
+
+--
+
+## Kan de service niet starten: Hostversie "x.x.x komt niet overeen met binaire versie "x.x.x"
+
+Het is raadzaam om `frontend/node_modules` en `frontend/package-lock.json` toe te voegen aan je `.gitignore`. Anders kan het zijn dat wanneer je je repository opent op een andere machine met mogelijk verschillende versies van Node geïnstalleerd, je je applicatie niet kunt uitvoeren.
+
+Als dit gebeurt, verwijder dan gewoon `frontend/node_modules` en `frontend/package-lock.json` en voer je `wails build` of `wails dev` commando opnieuw uit.
+
+## Bouwproces blijft hangen bij "Bindings genereren"
+
+Het bindings generatieproces draait je applicatie in een speciale modus. Als de applicatie opzettelijk of per ongeluk een oneindige lus bevat (bijvoorbeeld niet afsluiten na het voltooien van `wails.Run()`), kan dit leiden tot het vastlopen van het bouwproces bij de bindings generatie. Zorg ervoor dat je code correct wordt afgesloten.

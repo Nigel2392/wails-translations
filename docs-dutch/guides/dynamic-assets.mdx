@@ -1,0 +1,136 @@
+# Dynamische assets
+
+Als je assets dynamisch wilt laden of genereren voor je frontend, kun je dat bereiken met behulp van de [AssetsHandler](../reference/options#assetshandler) optie. De AssetsHandler is een generieke `http.Handler` die wordt aangeroepen voor elk niet-GET-verzoek op de assets-server en voor GET-verzoeken die niet kunnen worden bediend vanuit de gebundelde assets omdat het bestand niet is gevonden.
+
+Door een aangepaste AssetsHandler te installeren, kun je je eigen assets bedienen met behulp van een aangepaste asset-server.
+
+## Voorbeeld
+
+In ons voorbeeldproject maken we een eenvoudige assets-handler die bestanden van de schijf zal laden:
+
+```go title=main.go {17-36,49}
+package main
+
+import (
+	"embed"
+	"fmt"
+	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/options"
+	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"net/http"
+	"os"
+	"strings"
+)
+
+//go:embed all:frontend/dist
+var assets embed.FS
+
+type FileLoader struct {
+	http.Handler
+}
+
+func NewFileLoader() *FileLoader {
+	return &FileLoader{}
+}
+
+func (h *FileLoader) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	var err error
+	requestedFilename := strings.TrimPrefix(req.URL.Path, "/")
+	println("Bestand aanvragen:", requestedFilename)
+	fileData, err := os.ReadFile(requestedFilename)
+	if err != nil {
+		res.WriteHeader(http.StatusBadRequest)
+		res.Write([]byte(fmt.Sprintf("Kon bestand %s niet laden", requestedFilename)))
+	}
+
+	res.Write(fileData)
+}
+
+func main() {
+	// Maak een instantie van de app-structuur
+	app := NewApp()
+
+	// Maak applicatie met opties
+	err := wails.Run(&options.App{
+		Title:  "helloworld",
+		Width:  1024,
+		Height: 768,
+		AssetServer: &assetserver.Options{
+			Assets:  assets,
+			Handler: NewFileLoader(),
+		},
+		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 255},
+		OnStartup:        app.startup,
+		Bind: []interface{}{
+			app,
+		},
+	})
+
+	if err != nil {
+		println("Fout:", err)
+	}
+}
+```
+
+Wanneer we de applicatie uitvoeren in de ontwikkelmodus met `wails dev`, zien we de volgende uitvoer:
+
+```
+DEB | [ExternalAssetHandler] Laden 'http://localhost:3001/favicon.ico'
+DEB | [ExternalAssetHandler] Laden 'http://localhost:3001/favicon.ico' mislukt, gebruik AssetHandler
+Bestand aanvragen: favicon.ico
+```
+
+Zoals je kunt zien, wordt de assets-handler aangeroepen wanneer de standaard assets-server niet in staat is om het `favicon.ico`-bestand te bedienen.
+
+Als je met de rechtermuisknop op de hoofdtoepassing klikt en "inspecteren" selecteert om de ontwikkelaarstools te openen, kun je deze functie testen door het volgende in de console in te typen:
+
+```javascript
+let response = await fetch('does-not-exist.txt');
+```
+
+Dit genereert een fout in de ontwikkelaarstools. We kunnen zien dat de fout is wat we verwachten, geretourneerd door onze aangepaste assets-handler:
+
+```mdx-code-block
+<p className="text--center">
+  <img
+    src={require("@site/static/img/assetshandler-does-not-exist.webp").default}
+  />
+</p>
+```
+
+Als we echter `go.mod` aanvragen, zien we de volgende uitvoer:
+
+```mdx-code-block
+<p className="text--center">
+  <img src={require("@site/static/img/assetshandler-go-mod.webp").default} />
+</p>
+```
+
+Deze techniek kan worden gebruikt om afbeeldingen rechtstreeks in de pagina te laden. Als we onze standaardsjabloon bijwerken en het logobestand vervangen:
+
+```html
+<img id="logo" class="logo" />
+```
+
+met:
+
+```html
+<img src="build/appicon.png" style="width: 300px" />
+```
+
+Dan zouden we het volgende zien:
+
+```mdx-code-block
+<p className="text--center">
+  <img
+    src={require("@site/static/img/assetshandler-image.webp").default}
+    style={{ width: "75%" }}
+  />
+</p>
+```
+
+:::warning
+
+Het openstellen van je bestandssysteem op deze manier brengt een beveiligingsrisico met zich mee. Het wordt aanbevolen om toegang tot je bestandssysteem op de juiste manier te beheren.
+
+:::

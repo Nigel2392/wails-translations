@@ -1,0 +1,27 @@
+# Muisknoppen
+
+De Wails-runtime onderschept muisklikken om te bepalen of een raam zonder frame moet worden vergroot of een venster moet worden verplaatst.
+Er is gevraagd hoe te detecteren wanneer er op de muis is geklikt, omdat `window.onclick` de muisknoppen niet correct rapporteert.
+De volgende code laat zien hoe muisklikken kunnen worden gedetecteerd:
+
+```javascript
+window.addEventListener("mousedown", handleMouseButtonDown);
+
+function handleMouseButtonDown(event) {
+  if (event.button === 0) {
+    // linker muisknop
+  } else if (event.button === 1) {
+    // middelste muisknop
+  } else if (event.button === 2) {
+    // rechter muisknop
+  } else if (event.button === 3) {
+    // achterste muisknop
+  } else if (event.button === 4) {
+    // voorste muisknop
+  } else {
+    // andere muisknop
+  }
+}
+```
+
+Referentie: https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button

@@ -1,0 +1,10 @@
+# Tableau d'affichage
+
+```mdx-code-block
+<p style={{ "text-align": "center" }}>
+  <img src={require("@site/static/img/showcase/bboard.webp").default} />
+  <br />
+</p>
+```
+
+L'application [BulletinBoard](https://github.com/raguay/BulletinBoard) est un tableau d'affichage polyvalent pour les messages statiques ou les dialogues afin d'obtenir des informations de l'utilisateur pour un script. Il dispose d'une interface utilisateur en mode texte permettant de créer de nouveaux dialogues qui peuvent ensuite être utilisés pour obtenir des informations de l'utilisateur. Son design consiste à rester en cours d'exécution sur votre système et à afficher les informations au besoin, puis à se cacher. J'ai un processus qui surveille un fichier sur mon système et envoie le contenu à BulletinBoard lorsqu'il est modifié. Cela fonctionne très bien avec mes flux de travail. Il existe également un [flux de travail Alfred](https://github.com/raguay/MyAlfred/blob/master/Alfred%205/EmailIt.alfredworkflow) pour envoyer des informations au programme. Le flux de travail est également conçu pour fonctionner avec [EmailIt](https://github.com/raguay/EmailIt).

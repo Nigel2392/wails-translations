@@ -1,0 +1,14 @@
+# Modale Bestandsbeheerder
+
+```mdx-code-block
+<p style={{ "text-align": "center" }}>
+  <img
+    src={require("@site/static/img/showcase/modalfilemanager.webp").default}
+  />
+  <br />
+</p>
+```
+
+[Modale Bestandsbeheerder](https://github.com/raguay/ModalFileManager) is een bestandsbeheerder met twee panelen die gebruik maakt van webtechnologieën. Mijn oorspronkelijke ontwerp was gebaseerd op NW.js en kan [hier](https://github.com/raguay/ModalFileManager-NWjs) worden gevonden. Deze versie maakt gebruik van dezelfde Svelte-gebaseerde frontend code (maar deze is aanzienlijk gewijzigd sinds de overstap van NW.js), maar de backend is een implementatie van [Wails 2](https://wails.io/). Door deze implementatie gebruik ik niet langer commandoregelopdrachten zoals `rm`, `cp`, enzovoort, maar moet er een git-installatie op het systeem staan om thema's en extensies te downloaden. Het is volledig gecodeerd in Go en werkt veel sneller dan de vorige versies.
+
+Deze bestandsbeheerder is ontworpen volgens hetzelfde principe als Vim: een toestandsgestuurde toetsenbordacties. Het aantal toestanden is niet vast, maar zeer programmeerbaar. Daarom kunnen er een oneindig aantal toetsenbordconfiguraties worden gemaakt en gebruikt. Dit is het belangrijkste verschil met andere bestandsbeheerders. Er zijn thema's en extensies beschikbaar om te downloaden van GitHub.

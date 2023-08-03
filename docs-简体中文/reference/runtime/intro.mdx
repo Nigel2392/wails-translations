@@ -1,0 +1,92 @@
+---
+sidebar_position: 1
+---
+
+# 介绍
+
+Runtime是一个为应用程序提供实用方法的库。它同时提供Go和JavaScript的运行时，目标是尽可能保持它们的平衡。
+
+它包含以下实用方法：
+
+- [窗口](window.mdx)
+- [菜单](menu.mdx)
+- [对话框](dialog.mdx)
+- [事件](events.mdx)
+- [浏览器](browser.mdx)
+- [日志](log.mdx)
+- [剪贴板](clipboard.mdx)
+
+可以通过导入`github.com/wailsapp/wails/v2/pkg/runtime`来使用Go运行时。该包中的所有方法都以上下文作为第一个参数。该上下文应该从[OnStartup](../options.mdx#onstartup)或[OnDomReady](../options.mdx#ondomready)钩子函数中获取。
+
+:::info 注意
+
+虽然上下文将会被提供给[OnStartup](../options.mdx#onstartup)方法，但无法保证运行时在该方法中正常工作，因为窗口是在不同的线程中初始化的。如果希望在启动时调用运行时方法，请使用[OnDomReady](../options.mdx#ondomready)。
+
+:::
+
+JavaScript库可以通过`window.runtime`映射在前端中使用。在使用“dev”模式时，会生成一个运行时包，为运行时提供TypeScript声明。这个包应该位于您的前端目录中的`wailsjs`目录中。
+
+### Hide
+
+Go: `Hide(ctx context.Context)`<br/>
+JS: `Hide()`
+
+隐藏应用程序。
+
+:::info 注意
+
+在Mac上，这将以与标准Mac应用程序中的“隐藏”菜单项相同的方式隐藏应用程序。
+这与隐藏窗口不同，但应用程序仍然在前台。
+对于Windows和Linux，这目前与`WindowHide`相同。
+
+:::
+
+### Show
+
+显示应用程序。
+
+:::info 注意
+
+在Mac上，这将将应用程序带回到前台。
+对于Windows和Linux，目前与`WindowShow`相同。
+
+:::
+
+Go: `Show(ctx context.Context)`<br/>
+JS: `Show()`
+
+### Quit
+
+退出应用程序。
+
+Go: `Quit(ctx context.Context)`<br/>
+JS: `Quit()`
+
+### Environment
+
+返回当前环境的详细信息。
+
+Go: `Environment(ctx context.Context) EnvironmentInfo`<br/>
+JS: `Environment(): Promise<EnvironmentInfo>`
+
+#### EnvironmentInfo
+
+Go:
+
+```go
+type EnvironmentInfo struct {
+	BuildType string
+	Platform  string
+	Arch      string
+}
+```
+
+JS:
+
+```ts
+interface EnvironmentInfo {
+  buildType: string;
+  platform: string;
+  arch: string;
+}
+```
